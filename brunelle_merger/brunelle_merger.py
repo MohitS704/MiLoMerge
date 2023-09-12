@@ -47,10 +47,47 @@ def merge_ahead(counts, bins, i):
     ValueError
         if you merge an invalid point
     """
-    if i+1 >= len(counts) or i == 0:
+    if i >= len(counts) - 1 or i < 1:
         raise ValueError("YOU IDIOT WHY WOULD YOU MERGE ON THE EDGES THAT LOSES THE RANGE")
     
+    # rest_of_array = min(i+2, len(counts) - 1)
+    
     counts = np.concatenate( (counts[:i], [counts[i] + counts[i+1]], counts[i+2:]) )
+    #above does the following, <rest_of_list> + (merged_counts) + <rest_of_list>
+    bins = np.concatenate( (bins[:i+1], bins[i+2:]) )
+    #merge bins by removing a bin edge at index i
+    return counts, bins
+
+def merge_behind(counts, bins, i):
+    """Merges the bin at index i with its buddy at index i-1
+    The buddy absorbs the selected bin
+    i.e. [2,3,4] -> [2,4] if i=1
+
+    Parameters
+    ----------
+    counts : numpy.ndarray
+        the counts for your histogram
+    bins : numpy.ndarray
+        the bins for your histogram
+    i : int
+        the index
+
+    Returns
+    -------
+    Tuple(numpy.ndarray, numpy.ndarray)
+        the counts and bins for your merged histogram (numpy style histogram)
+
+    Raises
+    ------
+    ValueError
+        if you merge an invalid point
+    """
+    if i > len(counts) - 1 or i <= 1:
+        raise ValueError("YOU IDIOT WHY WOULD YOU MERGE ON THE EDGES THAT LOSES THE RANGE")
+    
+    # rest_of_array = min(i+2, len(counts) - 1)
+    
+    counts = np.concatenate( (counts[:i-1], [counts[i-1] + counts[i]], counts[i+1:]) )
     #above does the following, <rest_of_list> + (merged_counts) + <rest_of_list>
     bins = np.concatenate( (bins[:i], bins[i+1:]) )
     #merge bins by removing a bin edge at index i
@@ -161,6 +198,9 @@ class Brunelle_merger(object): #Professor Nathan Brunelle!
         new_bins = self.original_bins.copy()
         
         while len(new_counts_1) > target_bin_number:
+            
+            # print(len(new_bins))
+            
             current_distance = self.distanceFunc(new_counts_1, new_counts_2)
             
             combinations = {}
@@ -183,6 +223,87 @@ class Brunelle_merger(object): #Professor Nathan Brunelle!
         
         return new_counts_1, new_counts_2, new_bins
     
+    def greedy_grim_merge(self, target_bin_number):
+        """merges greedily. You can never dig too deep!
+
+        Parameters
+        ----------
+        target_bin_number : int
+            The target number of bins you want
+
+        Returns
+        -------
+        Tuple(numpy.ndarray, numpy.ndarray, numpy.ndarray)
+            a tuple of the new counts (1 and 2) and the new bins
+        """
+        new_counts_1 = self.counts_1.copy()
+        new_counts_2 = self.counts_2.copy()
+        new_bins = self.original_bins.copy()
+        
+        def grim_metric(i, ahead, *counts):
+            it = iter(counts)
+            the_len = len(next(it))
+            
+            if not all(len(l) == the_len for l in it):
+                raise ValueError('not all lists have same length!')
+
+            n = len(counts)
+            n_items = len(counts[0])
+            
+            overall_counts = np.vstack(counts)
+            
+            h = overall_counts[:,i]
+            if ahead:
+                if i + 1 >= n_items:
+                    raise IndexError("IDIOT")
+                hBar = np.ravel(overall_counts[:,i+1])
+            else:
+                if i - 1 <= 0:
+                    raise IndexError("IDIOT")
+                hBar = np.ravel(overall_counts[:,i-1])
+            
+            terms = hBar/h
+            terms[~np.isfinite(terms)] = 0
+            numerator = (np.nancumprod(terms)**(1./n))[-1]
+            denomenator = np.sum(terms)
+            
+            return numerator/denomenator
+            
+            
+            # counts = np.concatenate( (counts[:i], [counts[i] + counts[i+1]], counts[i+2:]) )
+            # #above does the following, <rest_of_list> + (merged_counts) + <rest_of_list>
+            # bins = np.concatenate( (bins[:i], bins[i+1:]) )
+            # #merge bins by removing a bin edge at index i
+            # return counts, bins
+            
+            
+            
+        while len(new_counts_1) > target_bin_number:
+            combinations = {}
+            scores = {}
+            
+            for i in range(1, len(new_counts_1) - 1): #don't merge edge bins/counts!
+                temp_counts_1_ahead, temp_bins = merge_ahead(new_counts_1, new_bins, i)
+                temp_counts_2_ahead, _ = merge_ahead(new_counts_2, new_bins, i)
+                score_ahead = grim_metric(i, True, new_counts_1, new_counts_2)
+                combinations[i] = (temp_counts_1_ahead, temp_counts_2_ahead, temp_bins)
+                scores[i] = score_ahead
+            
+            for i in range(len(new_counts_1) - 2, 1, -1):
+                temp_counts_1_behind, temp_bins = merge_behind(new_counts_1, new_bins, i)
+                temp_counts_2_behind, _ = merge_behind(new_counts_2, new_bins, i)
+                score_behind = grim_metric(i, False, new_counts_1, new_counts_2)
+                combinations[-i] = (temp_counts_1_behind, temp_counts_2_behind, temp_bins)
+                scores[-i] = score_behind
+            
+            # print(scores)
+            new_counts_1, new_counts_2, new_bins = combinations[ max(scores, key=scores.get) ]
+            # print(combinations.keys())
+            # new_counts_1, new_counts_2, new_bins = combinations[
+            #     np.min(list(combinations.keys()))
+            #     ]
+        
+        return new_counts_1, new_counts_2, new_bins
 
 
 
