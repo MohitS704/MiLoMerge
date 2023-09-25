@@ -1,28 +1,28 @@
 import brunelle_merger.brunelle_merger as bm
 import numpy as np
 import matplotlib.pyplot as plt
-import scipy.stats as sp
+# import scipy.stats as sp
 import mplhep as hep
 import pickle
 
-import multidimensionaldiscriminant.optimizeroc as optimizeroc #clone an instance of multidimensional roc in your area
+# import multidimensionaldiscriminant.optimizeroc as optimizeroc #clone an instance of multidimensional roc in your area
 
-def earth_mover(counts_1, counts_2):
-    """A stupid wrapper for the wasserstein/earth mover's distance
+# def earth_mover(counts_1, counts_2):
+#     """A stupid wrapper for the wasserstein/earth mover's distance
 
-    Parameters
-    ----------
-    counts_1 : numpy.ndarray
-        counts for hypo 1
-    counts_2 : numpy.ndarray
-        counts for hypo 2
+#     Parameters
+#     ----------
+#     counts_1 : numpy.ndarray
+#         counts for hypo 1
+#     counts_2 : numpy.ndarray
+#         counts for hypo 2
 
-    Returns
-    -------
-    float
-        a distance!
-    """
-    return sp.wasserstein_distance(counts_1, counts_2)
+#     Returns
+#     -------
+#     float
+#         a distance!
+#     """
+#     return sp.wasserstein_distance(counts_1, counts_2)
 
 def heshy_metric(counts_1, counts_2):
     """A stupid wrapper for heshy's distance (calculates a ROC curve)
@@ -204,18 +204,47 @@ if __name__ == "__main__":
     counts_2, _ = np.histogram(data_2, bins, density=True)
     counts_2 /= counts_2.sum()
 
-    print(counts, counts_2, bins)
+    # print(counts, counts_2, bins)
 
     merging = len(counts) - 1
 
-    print("Merging bin {:.0f} with bin {:.0f}".format(merging, merging-1))
-    print(bm.merge_behind(counts, bins, merging))
+    N_BINS_WANTED = 10
+    clown = bm.Brunelle_merger(counts, counts_2, bins, clown_metric)
+    grim_terms = clown.greedy_grim_merge(N_BINS_WANTED)
+
+    other_test = bm.Grim_Brunelle_merger(bins, counts, counts_2)
+    new_grim_terms = other_test.run_local(N_BINS_WANTED)
     
-    merging = 1
-
-    print("Merging bin {:.0f} with bin {:.0f}".format(merging, merging+1))
-    print(bm.merge_ahead(counts, bins, merging))
-
+    other_other_test = bm.Grim_Brunelle_merger(bins, counts, counts_2)
+    
+    
+    x = other_other_test.closest_pair_1d( list(range(len(other_other_test.merged_counts))), brute_force=False)
+    xx = other_other_test.closest_pair_1d(list(range(len(other_other_test.merged_counts))), brute_force=True)
+    
+    print(x)
+    print(xx)
+    
+    new_new_grim_terms = other_other_test.run_local(N_BINS_WANTED, True)
+    
+    # print(grim_terms[2])
+    # 
+    # print(new_grim_terms[1])
+    # 
+    # print(new_new_grim_terms[1])
+    
+    # print(bins)
+    # print("{:<40}".format("OG Score:"), ROC_curve(data_1.copy(), data_2.copy(), bins.copy() )[-1] )
+    
+    # print(grim_terms[-1])
+    # print("{:<40}".format("GRIM SCORE:"), ROC_curve(data_1, data_2, grim_terms[-1], 0, 10)[-1])
+    
+    # print(new_grim_terms[-1])
+    # print("{:<40}".format("GRIM SCORE new object old style:"), ROC_curve(data_1, data_2, new_grim_terms[-1], 0, 10)[-1])
+    
+    # print(new_new_grim_terms[-1])
+    # print("{:<40}".format("GRIM SCORE new object new style:"), ROC_curve(data_1, data_2, new_new_grim_terms[-1], 0, 10)[-1])
+    
+    
     # hists = {
     #     1 : counts,
     #     2 : counts_2
@@ -228,9 +257,6 @@ if __name__ == "__main__":
     # with open("output_raw.pkl", "rb") as f:
     #     saved_result = pickle.load(f)
 
-
-
-    # N_BINS_WANTED = 10
 
     # print( "OG Score:", ROC_curve(data_1.copy(), data_2.copy(), bins.copy() )[-1] )
 
