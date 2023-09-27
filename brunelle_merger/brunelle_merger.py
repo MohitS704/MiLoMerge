@@ -24,7 +24,7 @@ def grim_metric(i, j, *counts):
     metric = (numerator/denomenator)#*np.exp(np.sum(h + hBar)/np.sum(overall_counts) - 1 )
     return metric
 
-def closest_pair_1d(distanceFunc, *counts):
+def __closest_pair__(distanceFunc, *counts):
     if len(counts[0]) == 1:
         return np.inf
     elif len(counts[0]) == 2:
@@ -32,8 +32,8 @@ def closest_pair_1d(distanceFunc, *counts):
     else:
         m = len(counts[0])//2
         s1, s2 = counts[:,:m], counts[:,m:]
-        d1 = closest_pair_1d(distanceFunc, s1)
-        d2 = closest_pair_1d(distanceFunc, s2)
+        d1 = __closest_pair__(distanceFunc, s1)
+        d2 = __closest_pair__(distanceFunc, s2)
         d12 = distanceFunc(m-1, m, *counts)
         
         return min(d1, d2, d12)
@@ -218,29 +218,16 @@ class Grim_Brunelle_merger(object):
                                         )
 
         self.n_items = len(self.merged_counts[0])
-        starting_indices = range(self.n_items) #sets up a dictionary that looks like {0:0, 1:1, ..., i:i}
-        
-        self.non_local_indices = dict(zip(starting_indices, list(starting_indices))) #to keep track of counts merging non locally
         
         self.local_edges = self.post_stats_merge_bins.copy()
         
         self.counts_to_merge = self.merged_counts.copy()
         self.counts_to_merge = self.merged_counts.astype(float)
     
-    def __grim_metric__(self, i, j):
-        counts = self.counts_to_merge.copy()
-        
-        overall_counts = np.vstack(counts)
-        # print(len(overall_counts[0]))
-        h = np.ravel(overall_counts[:,i])
-        hBar = np.ravel(overall_counts[:,j])
-        
-        terms = (hBar/h)
-        numerator = (np.prod(terms)**(1./self.n))
-        denomenator = np.mean(terms)
-        
-        metric = (numerator/denomenator)#*np.exp(np.sum(h + hBar)/np.sum(overall_counts) - 1 )
-        return metric
+    def reset(self):
+        self.counts_to_merge = self.merged_counts.copy()
+        self.local_edges = self.post_stats_merge_bins.copy()
+        self.n_items = len(self.merged_counts[0])
     
     def __MLM__(self, b, bP):
         counts = self.counts_to_merge.copy()
@@ -255,53 +242,47 @@ class Grim_Brunelle_merger(object):
                     )
         return numerator/(2*denomenator)
     
-    def local_merge(self, i, j, k):
-        temp_counts = self.counts_to_merge.copy()
-        temp_edges = self.local_edges.copy()
-        
-        if i == j + 1: #merges count i with the count behind of it
-            if i > self.n_items - 1 or i < 0:
-                raise ValueError("YOU IDIOT WHY WOULD YOU MERGE ON THE EDGES THAT LOSES THE RANGE")
-            temp_counts = np.concatenate( (self.counts_to_merge[k][:j], [self.counts_to_merge[k][j] + self.counts_to_merge[k][i]], self.counts_to_merge[k][i+1:]) )
-            temp_edges = np.concatenate( (self.local_edges[:i], self.local_edges[i+1:]) )
-        elif i == j - 1: #merges count i with the count in front of it
-            if i > self.n_items - 1 or i < 1:
-                raise ValueError("YOU IDIOT WHY WOULD YOU MERGE ON THE EDGES THAT LOSES THE RANGE")    
-            temp_counts = np.concatenate( (self.counts_to_merge[k][:i], [self.counts_to_merge[k][i] + self.counts_to_merge[k][j]], self.counts_to_merge[k][j+1:]) )
-            temp_edges = np.concatenate( (self.local_edges[:i+1], self.local_edges[i+2:]) )
-        elif i == j: #does nothing
-            pass
+    def __merge__(self, i, j, local=True):
+        if local:
+            temp_counts = self.counts_to_merge.copy()
+            temp_edges = self.local_edges.copy()
+            
+            if i == j + 1: #merges count i with the count behind of it
+                if i > self.n_items - 1 or i < 0:
+                    raise ValueError("YOU IDIOT WHY WOULD YOU MERGE ON THE EDGES THAT LOSES THE RANGE")
+                temp_counts = np.concatenate( (self.counts_to_merge[:,:j], np.array([self.counts_to_merge[:,j] + self.counts_to_merge[:,i]]).T, self.counts_to_merge[:,i+1:]), axis=1 )
+                temp_edges = np.concatenate( (self.local_edges[:i], self.local_edges[i+1:]) )
+            elif i == j - 1: #merges count i with the count in front of it
+                if i > self.n_items - 1 or i < 1:
+                    raise ValueError("YOU IDIOT WHY WOULD YOU MERGE ON THE EDGES THAT LOSES THE RANGE")    
+                temp_counts = np.concatenate( (self.counts_to_merge[:,:i], np.array([self.counts_to_merge[:,i] + self.counts_to_merge[:,j]]).T, self.counts_to_merge[:,j+1:]), axis=1 )
+                temp_edges = np.concatenate( (self.local_edges[:i+1], self.local_edges[i+2:]) )
+            elif i == j: #does nothing
+                pass
+            else:
+                raise ValueError("This is local binning! Can only merge ahead or behind!")
+            
+            return (temp_counts, temp_edges)
         else:
-            raise ValueError("This is local binning! Can only merge ahead or behind!")
-        
-        return (temp_counts, temp_edges)
+            merged_counts = np.zeros(shape=(self.n, self.n_items - 1), dtype=float)
+            k = 0
+            for n in range(self.n_items):
+                if n != i and n != j:
+                    merged_counts[:,k] = self.counts_to_merge[:,n]
+                    k += 1
+            
+            merged_counts[:,-1] = self.counts_to_merge[:,i] + self.counts_to_merge[:,j]
+            
+            # self.non_local_indices[i] = j
+            # self.counts_to_merge[:,j] += self.counts_to_merge[:,i]
+            # self.counts_to_merge[:,i] = 0
+            self.n_items -= 1
+            
+            self.counts_to_merge = merged_counts
+            
+            return self.counts_to_merge
     
-    def __trace__(self, i):
-        while self.non_local_indices[i] != i:
-            i = self.non_local_indices[i]
-        return i
-    
-    def non_local_merge(self, i, j):
-        merged_counts = np.zeros(shape=(self.n, self.n_items - 1), dtype=float)
-        
-        k = 0
-        for n in range(self.n_items):
-            if n != i and n != j:
-                merged_counts[:,k] = self.counts_to_merge[:,n]
-                k += 1
-        
-        merged_counts[:,-1] = self.counts_to_merge[:,i] + self.counts_to_merge[:,j]
-        
-        # self.non_local_indices[i] = j
-        # self.counts_to_merge[:,j] += self.counts_to_merge[:,i]
-        # self.counts_to_merge[:,i] = 0
-        self.n_items -= 1
-        
-        self.counts_to_merge = merged_counts
-        
-        return self.counts_to_merge
-    
-    def closest_pair_1d(self, indices, brute_force=False):
+    def __closest_pair__(self, indices, brute_force=False):
         if brute_force:
             smallest_distance = [np.inf, None, None]
             for i in range(len(self.counts_to_merge)):
@@ -323,8 +304,8 @@ class Grim_Brunelle_merger(object):
             
             # left, right = self.counts_to_merge[s1], self.counts_to_merge[s2]
             
-            d1, s1 = closest_pair_1d(s1)
-            d2, s2 = closest_pair_1d(s2)
+            d1, s1 = __closest_pair__(s1)
+            d2, s2 = __closest_pair__(s2)
             
             d12 = self.__MLM__(m-1, m)
             
@@ -339,7 +320,10 @@ class Grim_Brunelle_merger(object):
             
             return [min_dist, *min_indices]
     
-    def run_local(self, target_bin_number, testing_new=False):
+    def run_local(self, target_bin_number):
+        
+        things_to_recalculate = set(list(range(1, self.n_items - 1)))
+        
         while self.n_items > target_bin_number:
             combinations = {}
             scores = {}
@@ -347,40 +331,64 @@ class Grim_Brunelle_merger(object):
             temp_counts = np.zeros(shape=(self.counts_to_merge.shape[0], self.counts_to_merge.shape[1] - 1), dtype=float)
             
             for i in range(1, self.n_items - 1): #don't merge edge bins/counts!
-                if testing_new:
-                    score = self.__MLM__(i, i+1)
-                    # print("NEW:", score)
-                else:
-                    score = self.__grim_metric__(i, i+1)
-                    # print("OLD:", score)
+                score = self.__MLM__(i, i+1)
                 combinations[i] = (i, i+1)
                 scores[i] = score
             
-            if testing_new:
-                score = self.__MLM__(1, 0)
-                # print("NEW:", score)
-            else:
-                score = self.__grim_metric__(1, 0)
-                # print("OLD:", score)
+            score = self.__MLM__(1, 0) #try merging counts 1 with count 0 (backwards)
             combinations[0] = (1, 0)
             scores[0] = score
+            i1, i2 = combinations[ min(scores, key=scores.get) ]
+            print(scores)
+            print(combinations, '\n')
+            # for k in range(self.n):
+            temp_counts, temp_bins = self.__merge__(i1, i2)
             
-            # for i in range(self.n_items - 1, 0, -1): #don't merge edge bins/counts!
-            #     if testing_new:
-            #         score = self.__MLM__(i, i-1)
-            #     else:
-            #         score = self.__grim_metric__(i, i-1)
-            #     combinations[i] = (i, i-1)
-            #     scores[i] = score
+            self.counts_to_merge, self.local_edges = temp_counts, temp_bins
             
-            # print('\n')
-            if testing_new:
-                i1, i2 = combinations[ min(scores, key=scores.get) ]
+            self.n_items -= 1
+            
+        return self.counts_to_merge, self.local_edges
+    
+    def run_local_faster(self, target_bin_number):
+        things_to_recalculate = set(list(range(1, self.n_items - 1)))
+        combinations = {}
+        scores = {}
+        while self.n_items > target_bin_number:
+            print(things_to_recalculate)
+            print(scores)
+            print(combinations)
+            
+            temp_counts = np.zeros(shape=(self.counts_to_merge.shape[0], self.counts_to_merge.shape[1] - 1), dtype=float)
+            for i in things_to_recalculate: #don't merge edge bins/counts!
+                if i == 1:
+                    score = self.__MLM__(1, 0) #try merging counts 1 with count 0 (backwards)
+                    combinations[0] = (1, 0)
+                    scores[0] = score
+                score = self.__MLM__(i, i+1)
+                combinations[i] = (i, i+1)
+                scores[i] = score
+            
+            item_to_delete = min(scores, key=scores.get)
+            i1, i2 = combinations[item_to_delete]
+            
+            print(i1, i2, self.n_items, '\n')
+            if i1 == self.n_items - 2:
+                things_to_recalculate = set([i-1])
             else:
-                i1, i2 = combinations[ max(scores, key=scores.get) ]
+                things_to_recalculate = set((i1-1, i1))
+            print(scores)
+            print(combinations)
+            for index in scores.keys():
+                if index > i1:
+                    scores[index-1] = scores[index]
+                    scores[index] = np.inf
+                    
+                    old_i1, old_i2 = combinations[index]
+                    combinations[index-1] = (old_i1 - 1, old_i2 - 1)
+                    combinations[index] = (np.nan, np.nan)
             
-            for k in range(self.n):
-                temp_counts[k], temp_bins = self.local_merge(i1, i2, k)
+            temp_counts, temp_bins = self.__merge__(i1, i2)
             
             self.counts_to_merge, self.local_edges = temp_counts, temp_bins
             
@@ -391,9 +399,9 @@ class Grim_Brunelle_merger(object):
     def run_nonlocal(self, target_bin_number):
         while self.n_items > target_bin_number:
             indices = list(range(len(self.counts_to_merge)))
-            distance, i, j = self.closest_pair_1d(indices)
-            print(self.n_items, (i,j), distance)
-            self.non_local_merge(i,j)
+            distance, i, j = self.__closest_pair__(indices)
+            # print(self.n_items, (i,j), distance)
+            self.__merge__(i,j, local=False)
     
         return self.counts_to_merge, np.array(range(self.n_items))
     

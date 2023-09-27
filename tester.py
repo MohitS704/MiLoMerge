@@ -1,28 +1,30 @@
 import brunelle_merger.brunelle_merger as bm
 import numpy as np
 import matplotlib.pyplot as plt
-# import scipy.stats as sp
+import scipy.stats as sp
 import mplhep as hep
 import pickle
+import uproot
+import time
 
-# import multidimensionaldiscriminant.optimizeroc as optimizeroc #clone an instance of multidimensional roc in your area
+import multidimensionaldiscriminant.optimizeroc as optimizeroc #clone an instance of multidimensional roc in your area
 
-# def earth_mover(counts_1, counts_2):
-#     """A stupid wrapper for the wasserstein/earth mover's distance
+def earth_mover(counts_1, counts_2):
+    """A stupid wrapper for the wasserstein/earth mover's distance
 
-#     Parameters
-#     ----------
-#     counts_1 : numpy.ndarray
-#         counts for hypo 1
-#     counts_2 : numpy.ndarray
-#         counts for hypo 2
+    Parameters
+    ----------
+    counts_1 : numpy.ndarray
+        counts for hypo 1
+    counts_2 : numpy.ndarray
+        counts for hypo 2
 
-#     Returns
-#     -------
-#     float
-#         a distance!
-#     """
-#     return sp.wasserstein_distance(counts_1, counts_2)
+    Returns
+    -------
+    float
+        a distance!
+    """
+    return sp.wasserstein_distance(counts_1, counts_2)
 
 def heshy_metric(counts_1, counts_2):
     """A stupid wrapper for heshy's distance (calculates a ROC curve)
@@ -195,169 +197,118 @@ def ROC_curve(sample1, sample2, bins=100, lower=0, upper=1):
 
 
 if __name__ == "__main__":
-    data_1 = np.random.normal(3, 2, 10000)
-    data_2 = np.random.normal(5, 2, 10000)
+    
+    data = uproot.open('test_data/data.root')
+    
+    sm_data = data['sm'].arrays(['Z1Mass', 'Z2Mass', 'helphi', 'helcosthetaZ1', 'helcosthetaZ2'], library='np')
+    ps_data = data['ps'].arrays(['Z1Mass', 'Z2Mass', 'helphi', 'helcosthetaZ1', 'helcosthetaZ2'], library='np')
 
-    counts, bins = np.histogram(data_1, 50, range=[0,10], density=True)
-    counts /= counts.sum()
-
-    counts_2, _ = np.histogram(data_2, bins, density=True)
-    counts_2 /= counts_2.sum()
-
-    # print(counts, counts_2, bins)
-
-    merging = len(counts) - 1
 
     N_BINS_WANTED = 10
-    clown = bm.Brunelle_merger(counts, counts_2, bins, clown_metric)
-    grim_terms = clown.greedy_grim_merge(N_BINS_WANTED)
+    counts_sm, edges = np.histogramdd([sm_data[i] for i in ['Z1Mass', 'Z2Mass', 'helphi', 'helcosthetaZ1', 'helcosthetaZ2']], 20,
+                                range=[ None, None, [-3.14, 3.14], [-1, 1], [-1, 1] ])
+    counts_sm /= counts_sm.sum()
+    counts_ps, _ = np.histogramdd([ps_data[i] for i in ['Z1Mass', 'Z2Mass', 'helphi', 'helcosthetaZ1', 'helcosthetaZ2']], edges,
+                                range=[ None, None, [-3.14, 3.14], [-1, 1], [-1, 1] ])
+    counts_ps /= counts_ps.sum()
 
-    other_test = bm.Grim_Brunelle_merger(bins, counts, counts_2)
-    new_grim_terms = other_test.run_local(N_BINS_WANTED)
+    OG_edges = edges.copy()
     
-    other_other_test = bm.Grim_Brunelle_merger(bins, counts, counts_2)
-    
-    
-    x = other_other_test.closest_pair_1d( list(range(len(other_other_test.merged_counts))), brute_force=False)
-    xx = other_other_test.closest_pair_1d(list(range(len(other_other_test.merged_counts))), brute_force=True)
-    
-    print(x)
-    print(xx)
-    
-    new_new_grim_terms = other_other_test.run_local(N_BINS_WANTED, True)
-    
-    # print(grim_terms[2])
-    # 
-    # print(new_grim_terms[1])
-    # 
-    # print(new_new_grim_terms[1])
-    
-    # print(bins)
-    # print("{:<40}".format("OG Score:"), ROC_curve(data_1.copy(), data_2.copy(), bins.copy() )[-1] )
-    
-    # print(grim_terms[-1])
-    # print("{:<40}".format("GRIM SCORE:"), ROC_curve(data_1, data_2, grim_terms[-1], 0, 10)[-1])
-    
-    # print(new_grim_terms[-1])
-    # print("{:<40}".format("GRIM SCORE new object old style:"), ROC_curve(data_1, data_2, new_grim_terms[-1], 0, 10)[-1])
-    
-    # print(new_new_grim_terms[-1])
-    # print("{:<40}".format("GRIM SCORE new object new style:"), ROC_curve(data_1, data_2, new_new_grim_terms[-1], 0, 10)[-1])
-    
-    
-    # hists = {
-    #     1 : counts,
-    #     2 : counts_2
-    # }
+    grim_bins = [None]*5
+    grim_bins_fast = [None]*5
+    EMD_bins = [None]*5
+    heshy_bins = [None]*5
+    post_merge_bins = [None]*5
 
-    # rocareacoeffdict = {(1,2):1}
-    # optimizer = optimizeroc.OptimizeRoc(hists, rocareacoeffdict, mergemultiplebins=True, smallchangetolerance=1e-5)
-    # # result = optimizer.run()
-    # saved_result = optimizer.run(resultfilename="output.pkl", rawfilename="output_raw.pkl")
-    # with open("output_raw.pkl", "rb") as f:
-    #     saved_result = pickle.load(f)
-
-
-    # print( "OG Score:", ROC_curve(data_1.copy(), data_2.copy(), bins.copy() )[-1] )
-
-    # edm = bm.Brunelle_merger(counts, counts_2, bins, earth_mover)
-    # edm_terms = edm.greedy_merge(N_BINS_WANTED)
-
-    # print(*edm_terms)
-    # print("EMD Score:", ROC_curve(data_1, data_2, edm_terms[-1], 0, 10)[-1] )
-
-
-    # heshy = bm.Brunelle_merger(counts, counts_2, bins, heshy_metric)
-    # heshy_terms = heshy.greedy_merge(N_BINS_WANTED)
-
-    # print(*heshy_terms)
-    # print("HESHY Score:", ROC_curve(data_1, data_2, heshy_terms[-1], 0, 10)[-1] )
-
-    # frown = bm.Brunelle_merger(counts, counts_2, bins, frown_metric)
-    # frown_terms = frown.greedy_merge(N_BINS_WANTED)
-
-    # print(*frown_terms)
-    # print("FROWN SCORE:", ROC_curve(data_1, data_2, frown_terms[-1], 0, 10)[-1])
-
-    # clown = bm.Brunelle_merger(counts, counts_2, bins, clown_metric)
-    # clown_terms = clown.greedy_merge(N_BINS_WANTED)
-
-    # print(*clown_terms)
-    # print("CLOWN SCORE:", ROC_curve(data_1, data_2, clown_terms[-1], 0, 10)[-1])
-
-    # new_bins = []
-
-    # bins_made = sorted(saved_result[-N_BINS_WANTED], key=min)
-    # for bin in bins_made:
-    # #         print(min(bin), max(bin))
-    #     index = min(bin)[0]
-    #     new_bins.append(bins[index])
-
-    # index = max(bins_made[-1])[0]
-    # new_bins.append(bins[index])
-
-    # if new_bins[-1] != bins[-1]:
-    #     new_bins[-1] = bins[-1]
-
-    # print("ALGO SCORE:", ROC_curve(data_1, data_2, new_bins)[-1])
-
-    # grim_terms = clown.greedy_grim_merge(N_BINS_WANTED)
-    # print(*grim_terms)
-    # print("GRIM SCORE:", ROC_curve(data_1, data_2, grim_terms[-1], 0, 10)[-1])
-
-
-    # mosaic = [[1,2,3,6],
-    #         [1,4,5,7]]
-
-    # ref_dict = {
-    #     1 : bins,
-    #     2 : edm_terms[-1],
-    #     3 : heshy_terms[-1],
-    #     4 : frown_terms[-1],
-    #     5 : clown_terms[-1],
-    #     6 : grim_terms[-1],
-    #     7 : new_bins
-    # }
-
-    # ref_names = {
-    #     1 : "OG",
-    #     2 : "EMD",
-    #     3 : "RAW ROC",
-    #     4 : "FROWN",
-    #     5 : "CLOWN",
-    #     6 : "GRIM",
-    #     7 : "OG ALGO"
-    # }
-
-
-    # fig, ax = plt.subplot_mosaic(mosaic, figsize=(10,7))
-
-    # fig2, ax2 = plt.subplots(1,1, figsize=(10,7))
-
-    # for i in ref_dict.keys():
-    #     counts_1, _ = np.histogram(data_1, ref_dict[i], density=True)
-    #     counts_1 /= counts_1.sum()
-    #     counts_2, _ = np.histogram(data_2, ref_dict[i], density=True)
-    #     counts_2 /= counts_2.sum()
+    bins_wanted = 5
+    for i in range(5):
+        indiv_axis = tuple([j for j in range(5) if j != i])
+        x = np.sum(counts_sm, axis=indiv_axis)
+        xp = np.sum(counts_ps, axis=indiv_axis)
         
-    #     print("BIN_LENGTH FOR:", ref_names[i], ":", len(ref_dict[i]))
+        dim_bins = bm.Grim_Brunelle_merger(edges[i], x.copy(), xp.copy())
+        start1 = time.time()
+        *_, temp_bins = dim_bins.run_local(bins_wanted)
+        end1 = time.time()
+        grim_bins[i] = temp_bins.copy()
+        print("Recalculating everything:", end1 - start1)
         
-    #     hep.histplot(counts_1, ref_dict[i], label="1", lw=3, ax=ax[i])
-    #     hep.histplot(counts_2, ref_dict[i], label="2", lw=3, ax=ax[i])
+        dim_bins.reset()
+        start2 = time.time()
+        *_, temp_bins = dim_bins.run_local_faster(bins_wanted)
+        end2 = time.time()
+        grim_bins_fast[i] = temp_bins.copy()
+        print("Sets:", end2 - start2)
         
-    #     TPR, FPR, score = ROC_curve(data_1.copy(), data_2.copy(), ref_dict[i].copy() )
+        dim_bins = bm.Brunelle_merger(x.copy(), xp.copy(), edges[i], earth_mover)
+        *_, temp_bins = dim_bins.greedy_merge(bins_wanted)
+        EMD_bins[i] = temp_bins.copy()
         
-    #     ax[i].set_title(ref_names[i] + " SCORE={:.2f}".format(score))
-    #     ax[i].legend()
-        
-    #     ax2.plot(TPR, FPR, label=ref_names[i] + " SCORE={:.2f}".format(score))
+        post_merge_bins[i] = dim_bins.post_stats_merge
+        hists = {
+        "0+": x,
+        "0-": xp
+        }
 
+        rocareacoeffdict = {("0+", "0-"): 1}
+        result = []
+        # optimizer = optimizeroc.OptimizeRoc(hists, rocareacoeffdict, mergemultiplebins=True, smallchangetolerance=1e-5)
+        # optimizer.run(resultfilename="output.pkl", rawfilename="output_raw.pkl")
+        
+        with open("output_raw.pkl", "rb") as f:
+            saved_result = pickle.load(f)
+        
+        new_bins = []
 
-    # fig.suptitle("Reducing LHS to {:.0f} bins".format(N_BINS_WANTED))
-    # fig.tight_layout()
-    # fig.savefig('testing_hist.png')
+        bins_made = sorted(saved_result[-bins_wanted], key=min)
+        for bin in bins_made:
+        #         print(min(bin), max(bin))
+            index = min(bin)[0]
+            new_bins.append(edges[i][index])
 
-    # ax2.legend()
-    # fig2.suptitle("Reducing OG to 5 bins")
-    # fig2.tight_layout()
-    # fig2.savefig('testing_hist_ROC.png')
+        index = max(bins_made[-1])[0]
+        
+        new_bins.append(edges[i][index])
+
+        if new_bins[-1] != edges[i][-1]:
+            new_bins[-1] = edges[i][-1]
+        
+        heshy_bins[i] = new_bins
+        
+    for i, key in enumerate(sm_data.keys()):
+        mosaic = [[1,2,4,6],
+                [1,3,5,6]]
+        fig, ax = plt.subplot_mosaic(mosaic, figsize=(10,7), facecolor='white')
+        print("GRIM BINS:", grim_bins[i])
+        print("HESHY BINS:", heshy_bins[i])
+            
+        *_, score = ROC_curve(sm_data[key], ps_data[key], grim_bins[i])
+        ax[2].hist([sm_data[key], ps_data[key]], grim_bins[i], label=[r'$0^+$', r'$0^-$'], histtype='step', lw=3)
+        ax[2].set_title("{:.3f}".format(score) + ": GRIM METRIC")
+    #     plt.plot(TPR, FPR, label="{:.3f}".format(score) + ": GRIM METRIC", lw=3)
+        
+        *_, score = ROC_curve(sm_data[key], ps_data[key], heshy_bins[i])
+        ax[3].hist([sm_data[key], ps_data[key]], heshy_bins[i], label=[r'$0^+$', r'$0^-$'], histtype='step', lw=3)
+        ax[3].set_title("{:.3f}".format(score) + ": HESHY ALGO")
+        
+        *_, score = ROC_curve(sm_data[key], ps_data[key], EMD_bins[i])
+        ax[4].hist([sm_data[key], ps_data[key]], EMD_bins[i], label=[r'$0^+$', r'$0^-$'], histtype='step', lw=3)
+        ax[4].set_title("{:.3f}".format(score) + ": EMD METRIC")
+        
+        *_, score = ROC_curve(sm_data[key], ps_data[key], grim_bins_fast[i])
+        ax[5].hist([sm_data[key], ps_data[key]], grim_bins_fast[i], label=[r'$0^+$', r'$0^-$'], histtype='step', lw=3)
+        ax[5].set_title("{:.3f}".format(score) + ": FAST GRIM METRIC")
+        
+        *_, score = ROC_curve(sm_data[key], ps_data[key], OG_edges[i])
+        ax[1].hist([sm_data[key], ps_data[key]], OG_edges[i], label=[r'$0^+$', r'$0^-$'], histtype='step', lw=3)
+        ax[1].set_title("{:.3f}".format(score) + ": UNMERGED")
+        
+        *_, score = ROC_curve(sm_data[key], ps_data[key], post_merge_bins[i])
+        ax[6].hist([sm_data[key], ps_data[key]], post_merge_bins[i], label=[r'$0^+$', r'$0^-$'], histtype='step', lw=3)
+        ax[6].set_title("{:.3f}".format(score) + ": STATS MERGE ONLY")
+        
+        ax[1].legend(frameon=False, loc='best')
+        fig.suptitle(key + " with {:.0f} histogram entries".format(bins_wanted))
+        fig.tight_layout()
+        fig.savefig(key + '.png')
+        plt.close(fig)
