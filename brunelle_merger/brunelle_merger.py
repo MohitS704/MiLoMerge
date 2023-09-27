@@ -97,9 +97,13 @@ def merge_bins(target, bins, *counts, **kwargs):
     while i < len(counts[0]):
         summation = np.zeros(len(counts))
         start = i
+        # print("starting iteration at:", i)
+        # print("Current running sum is ( {:.3f}, {:.3f} )".format(np.sum(new_counts[0]), np.sum(new_counts[1])))
+        # print("Running sum should be ( {:.3f}, {:.3f} )".format(*np.sum(counts[:,:i], axis=1)))
         while np.any(summation <= target) and (i < len(counts[0])):
             summation += counts[:,i]
             i += 1
+        # print("Merged counts", start, "through", i-1)
         
         if drop_first and len(new_bins) == 0:
             first_bin = max(i - 1, 0)
@@ -111,9 +115,12 @@ def merge_bins(target, bins, *counts, **kwargs):
             new_bins += [bins[i]]
         else:
             for k in range(len(counts)):
-                new_counts[k][-1] += np.sum(counts[start:i+1])
+                new_counts[k][-1] += np.sum(counts[k][start:i])
             new_bins[-1] = bins[i]
-    
+        # print("Current running sum is ( {:.3f}, {:.3f} )".format(np.sum(new_counts[0]), np.sum(new_counts[1])))
+        # print("Running sum should be ( {:.3f}, {:.3f} )".format(*np.sum(counts[:,:i], axis=1)))
+        # print()
+        # print()
     return np.vstack(new_counts), np.array(new_bins)
 
 
@@ -212,7 +219,7 @@ class Grim_Brunelle_merger(object):
         
         stats_for_mean = np.concatenate(counts)
         
-        self.merged_counts, self.post_stats_merge_bins = merge_bins(0.05*np.mean( stats_for_mean ), 
+        self.merged_counts, self.post_stats_merge_bins = merge_bins(0.05*np.median( stats_for_mean ), 
                                         bins, 
                                         *self.original_counts.copy()
                                         )
@@ -322,8 +329,6 @@ class Grim_Brunelle_merger(object):
     
     def run_local(self, target_bin_number):
         
-        things_to_recalculate = set(list(range(1, self.n_items - 1)))
-        
         while self.n_items > target_bin_number:
             combinations = {}
             scores = {}
@@ -339,8 +344,8 @@ class Grim_Brunelle_merger(object):
             combinations[0] = (1, 0)
             scores[0] = score
             i1, i2 = combinations[ min(scores, key=scores.get) ]
-            print(scores)
-            print(combinations, '\n')
+            # print(scores)
+            # print(combinations, '\n')
             # for k in range(self.n):
             temp_counts, temp_bins = self.__merge__(i1, i2)
             
