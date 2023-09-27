@@ -214,7 +214,7 @@ class Grim_Brunelle_merger(object):
         
         self.merged_counts, self.post_stats_merge_bins = merge_bins(0.05*np.mean( stats_for_mean ), 
                                         bins, 
-                                        *self.original_counts
+                                        *self.original_counts.copy()
                                         )
 
         self.n_items = len(self.merged_counts[0])
