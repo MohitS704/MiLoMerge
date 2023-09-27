@@ -109,7 +109,7 @@ def clown_metric(counts_1, counts_2):
     """
     return np.sum( np.abs(counts_1 - counts_1)/(counts_1 + counts_2) )
 
-def ROC_curve(sample1, sample2, bins=100, lower=0, upper=1):
+def ROC_curve(sample1, sample2, bins=100, lower=0, upper=1, supplied_counts=False):
     """This function produces a ROC curve from an attribute like phi, cos(theta1), D_{0-}, etc.
 
     Parameters
@@ -138,11 +138,16 @@ def ROC_curve(sample1, sample2, bins=100, lower=0, upper=1):
     if isinstance(bins, int):
         _, bins = np.histogram([], bins=bins, range=[lower, upper])
     
-    hypo2_counts, bins = np.histogram(sample2, bins=bins, density=True)
-    hypo2_counts /= hypo2_counts.sum()
-    
-    hypo1_counts, _ = np.histogram(sample1, bins=bins, density=True)
-    hypo1_counts /= hypo1_counts.sum()
+    if not supplied_counts:
+        hypo2_counts, bins = np.histogram(sample2, bins=bins, density=True)
+        hypo2_counts /= hypo2_counts.sum()
+        
+        hypo1_counts, _ = np.histogram(sample1, bins=bins, density=True)
+        hypo1_counts /= hypo1_counts.sum()
+    else:
+        hypo1_counts /= sample1.sum()
+        hypo2_counts /= sample2.sum()
+        
     
     # print(list(g1_phi_counts))
     # print()
