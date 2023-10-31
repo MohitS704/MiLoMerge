@@ -15,7 +15,7 @@ import numba as nb
 
 class Grim_Brunelle_merger(object):#Professor Nathan Brunelle!
     #https://engineering.virginia.edu/faculty/nathan-brunelle
-    def __init__(self, bins, *counts, stats_check=True, subtraction_metric=True, weights=None) -> None:
+    def __init__(self, bins, *counts, stats_check=True, subtraction_metric=True, weights=None, SM_version=False) -> None:
         """This class is the base object for bin merging. It merges bins locally (by outting adjacent bins together).
         Please only input 1 dimensional histograms! Should you need to operate upon a multidimensional histogram - please unroll them first.
 
@@ -32,6 +32,8 @@ class Grim_Brunelle_merger(object):#Professor Nathan Brunelle!
             If you want to use the metric that does subtraction. If false, it uses version of the metric that uses division, by default True
         weights : numpy.ndarray, optional
             A list of weights of the same length as the number of counts put in for each hypothesis. If None all weights are 1, by default None
+        SM_version : bool, optional
+            Whether you are using the "Standard Model" version where samples are compared to the first set of inputted counts instead of to everything else
 
         Raises
         ------
@@ -96,6 +98,8 @@ class Grim_Brunelle_merger(object):#Professor Nathan Brunelle!
         
         self.counts_to_merge = self.merged_counts.copy()
         self.counts_to_merge = self.merged_counts.astype(float)
+        
+        self.SM_version = SM_version
     
     def reset(self):
         """Resets the state
@@ -107,10 +111,33 @@ class Grim_Brunelle_merger(object):#Professor Nathan Brunelle!
     @staticmethod
     @nb.njit
     def __MLM__(n, counts, weights, b , bP, subtraction_metric, SM_version):
-        numerator = 0
-        denomenator = 0
+        """This is the money function that calculates the metric
+
+        Parameters
+        ----------
+        n : int
+            This is the input for self.n - i.e. the total number of entries in each set of counts
+        counts : numpy.ndarray
+            This is the input for self.counts_to_merge - i.e. the stacked set of histogram counts
+        weights : numpy.ndarray
+            This is the input for self.weights - i.e. the weight for each hypothesis
+        b : int
+            The first bin number being compared
+        bP : int
+            The second bin number being compared
+        subtraction_metric : bool
+            This is the input for self.subtraction_metric - i.e. whether to use the subtraction metric or the division metric
+        SM_version : bool
+            This is the input for self.SM_version - i.e. whether to compare everything to each other or just to the first input count
+
+        Returns
+        -------
+        float
+            A score for merging two histogram count entries
+        """
+        denomenator = numerator = 0
         
-        initial_range = np.arange(1) if SM_version else np.arange(n)
+        initial_range = np.arange(1, dtype=np.uint32) if SM_version else np.arange(n, dtype=np.uint32)
         
         for h in initial_range:
             for hP in np.arange(h+1, n):
@@ -135,23 +162,6 @@ class Grim_Brunelle_merger(object):#Professor Nathan Brunelle!
             return numerator
         else:
             return numerator/(2*denomenator)
-    
-    # def __MLM__(self, b, bP):
-    #     """The distance function MLM
-
-    #     Parameters
-    #     ----------
-    #     b : int
-    #         index 1 for the counts
-    #     bP : int
-    #         index 2 for the counts
-
-    #     Returns
-    #     ------
-    #     float
-    #         The distance metric between the two indices
-    #     """
-    #     return self._MLM(self.n, self.counts_to_merge.copy(), self.weights.copy(), b, bP, self.subtraction_metric, False)
     
     def __merge__(self, i, j):
         """Merges bins together by bin count index
@@ -221,11 +231,11 @@ class Grim_Brunelle_merger(object):#Professor Nathan Brunelle!
             temp_counts = np.zeros(shape=(self.counts_to_merge.shape[0], self.counts_to_merge.shape[1] - 1), dtype=float)
             
             for i in range(1, self.n_items - 1): #don't merge edge bins/counts!
-                score = self.__MLM__(self.n, self.counts_to_merge.copy(), self.weights.copy(), i, i+1, self.subtraction_metric, False)
+                score = self.__MLM__(self.n, self.counts_to_merge.copy(), self.weights.copy(), i, i+1, self.subtraction_metric, self.SM_version)
                 combinations[i] = (i, i+1)
                 scores[i] = score
             
-            score = self.__MLM__(self.n, self.counts_to_merge.copy(), self.weights.copy(), 1, 0, self.subtraction_metric, False) #try merging counts 1 with count 0 (backwards)
+            score = self.__MLM__(self.n, self.counts_to_merge.copy(), self.weights.copy(), 1, 0, self.subtraction_metric, self.SM_version) #try merging counts 1 with count 0 (backwards)
             combinations[0] = (1, 0)
             scores[0] = score
             i1, i2 = combinations[ min(scores, key=scores.get) ]
@@ -299,85 +309,8 @@ class Grim_Brunelle_merger(object):#Professor Nathan Brunelle!
             
         return self.counts_to_merge, self.local_edges
 
-
-class Grim_Brunelle_with_standard_model(Grim_Brunelle_merger):
-    def __init__(self, bins, *counts, stats_check=True, subtraction_metric=True, weights=None) -> None:
-        """This class  merges bins locally (by outting adjacent bins together) by comparing each item to a "Standard Model" sample.
-        The first set of counts that are input will be treated as the standard model sample.
-        Please only input 1 dimensional histograms! Should you need to operate upon a multidimensional histogram - please unroll them first.
-
-        Parameters
-        ----------
-        bins : numpy.ndarray
-            These are your bin edges
-        counts : numpy.ndarray
-            These are a set of bin counts put in as args. Place an unlimited number of them -  each one corresponds to a different hypothesis. 
-            The first array that is input will be the "Standard Model" sample.
-            Both bins and counts can be created using numpy.histogram()
-        stats_check : bool, optional
-            If you want to insert a statistics check enable this option, by default True
-        subtraction_metric : bool, optional
-            If you want to use the metric that does subtraction. If false, it uses version of the metric that uses division, by default True
-        weights : numpy.ndarray, optional
-            A list of weights of the same length as the number of counts put in for each hypothesis. If None all weights are 1, by default None
-
-        Raises
-        ------
-        ValueError
-            If your bin counts are not all the same length, raise an error
-        ValueError
-            If len(counts) != len(bins) - 1 then raise an error
-        ValueError
-            If len(weights) != len(counts) then raise an error
-        """
-        super().__init__(bins, *counts, stats_check=stats_check, subtraction_metric=subtraction_metric, weights=weights)
-        
-    def __MLM__(self, b, bP):
-        """The distance function MLM - edited to perform only comparisons with the "Standard Model" sample.
-
-        Parameters
-        ----------
-        b : int
-            index 1 for the counts
-        bP : int
-            index 2 for the counts
-
-        Returns
-        ------
-        float
-            The distance metric between the two indices
-        """
-        
-        counts = self.counts_to_merge.copy()
-        numerator = 0
-        denomenator = 0
-        
-        h = 0
-        for hP in range(1, self.n):
-            mat = np.array([
-                [ counts[h][b], counts[h][bP] ],
-                [ counts[hP][b], counts[hP][bP] ]
-            ], dtype=float)
-            
-            mat *= self.weights[hP]
-            # print("tests")
-            # print(mat)
-            # print(counts[h][b], counts[h][bP], counts[hP][b], counts[hP][bP])
-            # print(2*np.prod(mat), 2*np.prod([counts[h][b], counts[h][bP], counts[hP][b], counts[hP][bP]]))
-            # print()
-            if self.subtraction_metric:
-                numerator += (mat[0][0]*mat[1][1])**2 + (mat[0][1]*mat[1][0])**2 - 2*np.prod(mat)
-            else:
-                numerator += (mat[0][0]*mat[1][1])**2 + (mat[0][1]*mat[1][0])**2
-                denomenator += np.prod(mat)
-                    
-        if self.subtraction_metric:
-            return numerator#/(2*denomenator)
-        else:
-            return numerator/(2*denomenator)
-
 class Grim_Brunelle_nonlocal(Grim_Brunelle_merger):
-    def __init__(self, bins, *counts, stats_check=True, subtraction_metric=True, weights=None) -> None:
+    def __init__(self, bins, *counts, stats_check=True, subtraction_metric=True, weights=None, SM_version=False) -> None:
         """This class is the base object for bin merging. 
         It merges bins nonlocally - so the bins no longer contain any physical meaning afterwards.
         Please only input 1 dimensional histograms! Should you need to operate upon a multidimensional histogram - please unroll them first.
@@ -395,6 +328,8 @@ class Grim_Brunelle_nonlocal(Grim_Brunelle_merger):
             If you want to use the metric that does subtraction. If false, it uses version of the metric that uses division, by default True
         weights : numpy.ndarray, optional
             A list of weights of the same length as the number of counts put in for each hypothesis. If None all weights are 1, by default None
+        SM_version : bool, optional
+            Whether you are using the "Standard Model" version where samples are compared to the first set of inputted counts instead of to everything else
 
         Raises
         ------
@@ -405,15 +340,17 @@ class Grim_Brunelle_nonlocal(Grim_Brunelle_merger):
         ValueError
             If len(weights) != len(counts) then raise an error
         """
-        
+        bins = np.array(bins)
         self.physical_bins = bins
         self.n_observables = bins.shape[0] if len(bins.shape) > 1 else 1
+        # print(self.n_observables)
         self.original_counts_shape = counts[0].shape
         
         unrolled = list(map(np.ndarray.ravel, counts))
         bins = np.arange(len(unrolled[0]) + 1)
         
-        super().__init__(bins, *counts, stats_check=stats_check, subtraction_metric=subtraction_metric, weights=weights)
+        
+        super().__init__(bins, *unrolled, stats_check=stats_check, subtraction_metric=subtraction_metric, weights=weights, SM_version=SM_version)
     
         self.tracker = np.full((self.n_items, self.n_items),np.nan, object)
         
@@ -425,7 +362,16 @@ class Grim_Brunelle_nonlocal(Grim_Brunelle_merger):
         self.scores = np.zeros((self.n_items, self.n_items))
     
     def dump_edges(self, fname=""):
-        import pickle as pkl
+        """This function dumps everything into files of your choice. 
+        The tool for placement is put into the python function file
+        It will also dump the tracker into a numpy memorymap .mm file
+        
+        Parameters
+        ----------
+        fname : str, optional
+            The filename you want to output to. If none is given it will dump to "dumped", by default ""
+        """
+        
         if not fname:
             fname = "dumped"
             
@@ -439,68 +385,76 @@ class Grim_Brunelle_nonlocal(Grim_Brunelle_merger):
                     bin_map[n_bins][index] = new_bin
         
         np.set_printoptions(threshold=sys.maxsize)
-        edges_str = np.array2string(self.physical_bins, separator=',', formatter={'float_kind':lambda x: "%.3f" % x})
+        edges_str = np.array2string(self.physical_bins, separator=',', formatter={'float_kind':lambda x: "%.3f" % x}, max_line_width=np.inf)
+        
+        docstr = '''"""**place_entry** will place a set of observables into a given bin index from a previous optimization
+
+	Parameters
+	----------
+	N : int
+		The number of bins that you want total
+	observables : numpy.ndarray
+		A _1-d_ array of observables that you want to to place
+	verbose : bool, optional
+		Set to True if you want to print verbose options, by default False
+
+	Returns
+	-------
+	int
+		The bin index in range [0, N) that the observables will be placed at
+
+	Raises
+	------
+	ValueError
+		len(observables) must be equal to the shape of bin edges
+	ValueError
+		You asked for fewer bins than is possible!
+	"""'''
+        
+        
         code = ["import numpy as np"]
-        code += ["import numba as nb"]
-        code += ["@nb.njit"]
-        code += ["def place_entry(N, *observables, verbose=False):"]
+        code += ["def place_entry(N, observables, verbose=False):"]
         code = "\n".join(code)
         
-        func = ["if len(observables) != {:.0f}:".format(self.n_observables)]
+        func = [docstr]
+        func += ["if len(observables) != {:.0f}:".format(self.n_observables)]
         func += ["\traise ValueError('Must input {:.0f} observables for this histogram!')".format(self.n_observables)]
         func += ["observables = np.array(observables, dtype=np.float64)"]
         func += ["edges=np.array("+edges_str + ")"]
-        # func += ["OG_shape="+str(self.original_counts_shape)]
         if self.n_observables > 1:
+            func += ["observables = observables.reshape(1, edges.shape[0])"]
             func += ["counts, *_ = np.histogramdd(observables, edges)"]
         else:
             func += ["counts, *_ = np.histogram(observables, edges)"]
-        func += ["nonzero_rolled = np.nonzero(counts)"]
+        func += ["nonzero_rolled = np.fromiter(map( lambda x: x[0], np.nonzero(counts)), dtype=np.uint64)"]
         func += ["if verbose:"]
         func += ["\tprint('original index of:', nonzero_rolled)"]
+        func += ["\tprint('This places your point in the range:')"]
+        func += ["\tfor i in range(edges.shape[0]):"]
+        func += ["\t\tprint('[', edges[i][nonzero_rolled[i]], ',', edges[i][int(nonzero_rolled[i]+1)], ']')"]
         func += ["counts = counts.ravel()"]
         func += ["nonzero = np.nonzero(counts)"]
         func += ["mapping = np.memmap('"+fname+ ".mm', dtype=np.int32, mode='r', shape=" + str(self.tracker.shape) + ")"]
-        func += ["mapped_val = mapping[N-1][nonzero][0]"]
+        func += ["mapped_val = mapping[N-1][nonzero]"]
         func += ["if mapped_val < 0:"]
         func += ["\traise ValueError('number of bins: ' + str(N) + ' was not calculated ')"]
-        func += ["return mapped_val"]
+        func += ["return mapped_val[0]"]
         
         func = "\n\t".join(func)
         func = "\n\t" + func
         
+        code2 = "\ndef help():"
+        helper = ["text = " + docstr]
+        helper += ["print(text)"]
+        helper += ["exit()"]
+        helper = "\n\t".join(helper)
+        helper = "\n\t" + helper
+        
         with open(fname+".py", "w+") as f:
             f.write(code)
             f.write(func)
-        
-        with open(fname + ".pkl", 'wb+') as p:
-            pkl.dump(self.tracker, p)
-        # with up.recreate(fname + ".root") as e:
-        #     for n, edges_list in enumerate(self.tracker):
-                
-        #         nP = len(self.tracker[0]) - n
-        #         nP = str(nP)
-        #         branches = {}
-        #         entries = {}
-        #         for entry, tup in edges_list.items():
-        #             branches[str(entry)] = np.int64
-        #             entries[str(entry)] = ak.Array(tup)
-        #             e[nP + '/' + str(entry)] = {"b":np.array(tup)}
-                # t = ak.zip(entries)
-                # print(entries)
-                # print(t)
-                # print(entries)
-                # print()
-                # entries = ak.zip(entries)
-                
-                # e.mktree(n, branches)
-                # e[n].extend(entries)
-                # print(nP)
-                # e[nP] = entries
-                # for entry, tup in edges_list.items():
-                    # edges_list[entry] = np.array(tup, dtype=int)
-                # print(edges_list)
-                # e[n] = (edges_list)
+            f.write(code2)
+            f.write(helper)
     
     def __merge__(self, i, j):
         """Merges bins together by bin count index
@@ -511,8 +465,6 @@ class Grim_Brunelle_nonlocal(Grim_Brunelle_merger):
             index i
         j : int
             index j
-        track : bool
-            Whether you would like to track the placement of where the original bins go in the nonlocal case
 
         Returns
         -------
@@ -536,7 +488,9 @@ class Grim_Brunelle_nonlocal(Grim_Brunelle_merger):
         
         merged_counts[:,k] = self.counts_to_merge[:,i] + self.counts_to_merge[:,j] #shove everything into the final bin
         
-        for wipe in range(k, len(self.scores)):
+        for wipe in range(k, len(self.scores)): 
+            #wipe away rows and columns that are no longer being considered
+            #(i.e. phasespace moves down from 5 bins to 4, wipe scores from old bin 5)
             self.scores[wipe] = np.inf
             self.scores[:,wipe] = np.inf
             
@@ -569,7 +523,7 @@ class Grim_Brunelle_nonlocal(Grim_Brunelle_merger):
                     self.scores[i][j] = np.inf
                     continue
                 
-                self.scores[i][j] = self.__MLM__(self.n, self.counts_to_merge.copy(), self.weights.copy(), i, j, self.subtraction_metric, False)
+                self.scores[i][j] = self.__MLM__(self.n, self.counts_to_merge.copy(), self.weights.copy(), i, j, self.subtraction_metric, self.SM_version)
         smallest_distance_index = np.unravel_index(self.scores.argmin(), self.scores.shape)
         smallest_distance = self.scores[smallest_distance_index], *smallest_distance_index
         
@@ -578,15 +532,13 @@ class Grim_Brunelle_nonlocal(Grim_Brunelle_merger):
         
         return smallest_distance
     
-    def run(self, target_bin_number):
+    def run(self, target_bin_number=1):
         """runs the nonlocal binning
 
         Parameters
         ----------
         target_bin_number : int
             the number of bins you want
-        track : bool, optional
-            Whether you would like to track the placement of where the original bins go in the nonlocal case, by default False
 
         Returns
         -------
@@ -600,7 +552,7 @@ class Grim_Brunelle_nonlocal(Grim_Brunelle_merger):
             msg += "\nNo merging will occur"
             warnings.warn("\n"+h.print_msg_box(msg, title="WARNING"))
             
-        pbar = tqdm.tqdm(total=self.n_items - target_bin_number)    
+        pbar = tqdm.tqdm(total=self.n_items - target_bin_number)
         while self.n_items > target_bin_number:
             distance, i, j = self.__closest_pair__()
             self.__merge__(i,j)
@@ -615,110 +567,34 @@ class Grim_Brunelle_nonlocal(Grim_Brunelle_merger):
             raise RuntimeError('\n' + h.print_msg_box(errortext, title="ERROR"))
         
         plt.close('all')
-        centers = (self.post_stats_merge_bins[1:] + self.post_stats_merge_bins[:-1])/2
-        
-        if n == None:
-            n = self.n_items
-        
-        color_wheel = iter(plt.cm.rainbow(np.linspace(0, 1, n)))
-        for bin_row in self.tracker[n - 1]:
-            # indices = self.__trace__(bin_index, len(self.tracker) - 1)
-            if not isinstance(bin_row, tuple) and np.isnan(bin_row):
-                continue
-            indices = bin_row
-            c = next(color_wheel)
-            for index in indices:
-                plt.scatter(centers[index], self.merged_counts[0][index], color=c, marker='o', s=50)
-                plt.scatter(centers[index], self.merged_counts[1][index], color=c, marker='X', s=50)
-        
-        if xlabel == None:
-            "Distribution Clustering"
-        else:
-            xlabel = "Nonlocal clustering for " + xlabel
-        plt.title("Merging Non-locally to {:.0f} bins from {:.0f} bins".format(n, len(self.merged_counts[0])))
-        plt.xlabel(xlabel)
-        plt.tight_layout()
-        if fname:
-            plt.savefig(fname + '.png')
-            # plt.show()
-        plt.close()
-        return self.tracker
-    
-class Grim_Brunelle_nonlocal_with_standard_model(Grim_Brunelle_nonlocal):
-    def __init__(self, bins, *counts, stats_check=True, subtraction_metric=True, weights=None) -> None:
-        """This class will perform nonlocal bin merging by comparing each item to a "Standard Model" sample.
-        The first set of counts that are input will be treated as the standard model sample.
-        It merges bins nonlocally - so the bins no longer contain any physical meaning afterwards.
-        Please only input 1 dimensional histograms! Should you need to operate upon a multidimensional histogram - please unroll them first.
-
-        Parameters
-        ----------
-        bins : numpy.ndarray
-            These are your bin edges
-        counts : numpy.ndarray
-            These are a set of bin counts put in as args. Place an unlimited number of them -  each one corresponds to a different hypothesis. 
-            The first array that is input will be the "Standard Model" sample.
-            Both bins and counts can be created using numpy.histogram()
-        stats_check : bool, optional
-            If you want to insert a statistics check enable this option, by default True
-        subtraction_metric : bool, optional
-            If you want to use the metric that does subtraction. If false, it uses version of the metric that uses division, by default True
-        weights : numpy.ndarray, optional
-            A list of weights of the same length as the number of counts put in for each hypothesis. If None all weights are 1, by default None
-
-        Raises
-        ------
-        ValueError
-            If your bin counts are not all the same length, raise an error
-        ValueError
-            If len(counts) != len(bins) - 1 then raise an error
-        ValueError
-            If len(weights) != len(counts) then raise an error
-        """
-        super().__init__(bins, *counts, stats_check=stats_check, subtraction_metric=subtraction_metric, weights=weights)
-        self.weights = np.array(weights)
-        
-        
-    def __MLM__(self, b, bP):
-        """The distance function MLM
-
-        Parameters
-        ----------
-        b : int
-            index 1 for the counts
-        bP : int
-            index 2 for the counts
-
-        Returns
-        ------
-        float
-            The distance metric between the two indices
-        """
-        
-        counts = self.counts_to_merge.copy()
-        numerator = 0
-        denomenator = 0
-        
-        h = 0
-        for hP in range(1, self.n):
-            mat = np.array([
-                [ counts[h][b], counts[h][bP] ],
-                [ counts[hP][b], counts[hP][bP] ]
-            ], dtype=float)
+        with plt.style.context(hep.style.CMS):
+            plt.figure(figsize=(10,7), facecolor='white')
+            centers = (self.post_stats_merge_bins[1:] + self.post_stats_merge_bins[:-1])/2
             
-            mat *= self.weights[hP]
-            # print("tests")
-            # print(mat)
-            # print(counts[h][b], counts[h][bP], counts[hP][b], counts[hP][bP])
-            # print(2*np.prod(mat), 2*np.prod([counts[h][b], counts[h][bP], counts[hP][b], counts[hP][bP]]))
-            # print()
-            if self.subtraction_metric:
-                numerator += (mat[0][0]*mat[1][1])**2 + (mat[0][1]*mat[1][0])**2 - 2*np.prod(mat)
+            if n == None:
+                n = self.n_items
+            
+            color_wheel = iter(plt.cm.rainbow(np.linspace(0, 1, n)))
+            for bin_row in self.tracker[n - 1]:
+                # indices = self.__trace__(bin_index, len(self.tracker) - 1)
+                if not isinstance(bin_row, tuple) and np.isnan(bin_row):
+                    continue
+                indices = bin_row
+                c = next(color_wheel)
+                for index in indices:
+                    plt.scatter(centers[index], self.merged_counts[0][index], color=c, marker='.', s=25)
+                    plt.scatter(centers[index], self.merged_counts[1][index], color=c, marker='x', s=25)
+                    plt.scatter(centers[index], self.merged_counts[2][index], color=c, marker='1', s=25)
+            
+            if xlabel == None:
+                "Distribution Clustering"
             else:
-                numerator += (mat[0][0]*mat[1][1])**2 + (mat[0][1]*mat[1][0])**2
-                denomenator += np.prod(mat)
-                    
-        if self.subtraction_metric:
-            return numerator#/(2*denomenator)
-        else:
-            return numerator/(2*denomenator)
+                xlabel = "Nonlocal clustering for " + xlabel
+            plt.title("Merging Non-locally to {:.0f} bins from {:.0f} bins".format(n, len(self.merged_counts[0])))
+            plt.xlabel(xlabel)
+            plt.tight_layout()
+            if fname:
+                plt.savefig(fname + '.png')
+                # plt.show()
+            plt.close()
+            return self.tracker

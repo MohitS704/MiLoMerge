@@ -1,7 +1,8 @@
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.patches
-
+import warnings
+import mplhep as hep
 
 class SUPER_ROC_Curves(object):
     def __init__(self) -> None:
@@ -32,6 +33,16 @@ class SUPER_ROC_Curves(object):
         sample1 = np.array(sample1)
         sample2 = np.array(sample2)
         
+        if np.any(sample2 < 0):
+            warnings.warn("Swapping sample 1 and sample 2...")
+            if np.any(sample1 < 0):
+                raise ValueError(">= 1 sample must be completely positive!")
+            sample1, sample2 = sample2.copy(), sample1.copy() #sample1 should be the negative one by construction
+        
+        isNegative = False
+        if np.any(sample1 < 0):
+            isNegative = True
+        
         hypo1_counts = sample1.copy()/np.abs(sample1).sum()
         hypo2_counts = sample2.copy()/np.abs(sample2).sum()
         
@@ -44,7 +55,8 @@ class SUPER_ROC_Curves(object):
                 list(enumerate(division_terms)), key=lambda x: x[1]
             )
         )
-
+        print("ratios")
+        print(ratios)
         indices = ratios[:,0].astype(int) #gets the bin indices only for the ordered ratio pairs
     
         length = len(indices) + 1 #the extra value allows for the addition of the final end point
@@ -72,63 +84,65 @@ class SUPER_ROC_Curves(object):
         TPR = PAC_numerator/(PAC + PBC) #vectorized calculation
         FPR = NAC_numerator/(NAC + NBC)
         
-        
-        
-        turning_point = np.argmin(TPR) #this is the turning point change in sign indicates turning point! Sign changes at max negative value
-        
+        if isNegative:
+            turning_point = np.where(TPR == TPR.min())[0][-1] #this is the turning point change in sign indicates turning point! Sign changes at max negative value
+        else:
+            turning_point = 0
+        print(turning_point)
         
         negative_gradient = TPR[:turning_point], FPR[:turning_point] #now there are two curves, positive and negative
         positive_gradient = TPR[turning_point:], FPR[turning_point:]
-        apex_x = TPR[turning_point]
-        apex_y = FPR[turning_point]        
-        # TRANSFORM THE CURVES TO THE POSITIVE REGIME
-        negative_gradient = np.array((-apex_x + negative_gradient[0], negative_gradient[1] + apex_y))
-        positive_gradient = np.array((-apex_x + positive_gradient[0], positive_gradient[1] - apex_y))
+        
+        area_below_top_line = np.trapz(*positive_gradient[::-1])
+        area_below_bottom_line = np.trapz(*negative_gradient[::-1])*-1
+        area_inside = area_below_top_line - area_below_bottom_line
+        
+        print("areas:", area_below_top_line, area_below_bottom_line, area_inside)
+        
+        plt.plot(*negative_gradient, marker='o')
+        plt.plot(*positive_gradient, marker='o')
+        plt.title("OG")
+        plt.show()
+        
+        # apex_x = TPR[turning_point]
+        # apex_y = FPR[turning_point]
+        # # TRANSFORM THE CURVES TO THE POSITIVE REGIME
+        # negative_gradient = np.array((-apex_x + negative_gradient[0], negative_gradient[1] + apex_y))
+        # positive_gradient = np.array((-apex_x + positive_gradient[0], positive_gradient[1] - apex_y))
         
         
-        #ORIGINAL PLOT
-        # plt.plot(TPR[np.isfinite(TPR) & np.isfinite(FPR)], FPR[np.isfinite(TPR) & np.isfinite(FPR)])
-        # plt.show()
+        # #ORIGINAL PLOT
+        BBB = np.abs(np.min(TPR))
         
-        new_TPR = np.concatenate( (positive_gradient[0], negative_gradient[0]) ) #new curves!
-        new_FPR = np.concatenate( (positive_gradient[1], negative_gradient[1]) )
+        if isNegative:
+            TPR /= -BBB
         
-        # if self.bounding_box_scale_factor == None:
-        BBB = np.max(new_TPR), np.max(FPR) #"Big Bounding Box"
-        scale_x, scale_y = 1/BBB[0], 1/BBB[1]
+        if isNegative:
+            score = 1 - area_inside/BBB
+        else:
+            score = 0.5 - area_inside
+            score /= 0.5
+            
+        print("score=", score)
         
-        new_TPR *= scale_x
-        positive_gradient[0] *= scale_x
-        negative_gradient[0] *= scale_x
+        plt.title("OG OG")
+        plt.plot(TPR[np.isfinite(TPR) & np.isfinite(FPR)], FPR[np.isfinite(TPR) & np.isfinite(FPR)], marker='o')
+        ax = plt.gca()
+        ax.fill_between(*positive_gradient, 0, color='red', alpha=0.5)
+        ax.fill_between(*negative_gradient, 0, color='white')
         
-        new_FPR *= scale_y
-        positive_gradient[1] *= scale_y
-        negative_gradient[1] *= scale_y
+        rect = matplotlib.patches.Rectangle((0,0),1,1, lw=3, zorder=np.inf)
+        rect.fill = False
+        ax.add_patch(rect)
         
-        area_below_bottom_line = np.trapz(*positive_gradient[::-1])
-        area_below_top_line = np.trapz(*negative_gradient[::-1])*-1 #the negative gradient curve goes in the opposite direction so just multiply by -1 for trapezoid rule        
-        
-        # plt.plot(new_TPR, new_FPR)
-        
-        
-        # rect = matplotlib.patches.Rectangle((0,0),1,1, lw=3, zorder=np.inf)
-        # rect.fill = False
-        # ax = plt.gca()
-        
-        # ax.fill_between(*positive_gradient, 1, color='red', alpha=0.5)
-        # ax.fill_between(*negative_gradient, 1, color='white')
-        # ax.add_patch(rect)
-        # # print("POS:", positive_gradient)
-        # # print("NEG:", negative_gradient)
-        # # print()
-        # plt.show()
+        plt.show()
         
         if name == None:
             name = str(len(self.curves.keys()))
         
-        self.curves[str(name)] = new_TPR, new_FPR, np.abs(area_below_top_line - area_below_bottom_line)
+        self.curves[str(name)] = TPR, FPR, score
         
-        return new_TPR, new_FPR, np.abs(area_below_top_line - area_below_bottom_line)
+        return TPR, FPR, score
     
     def plot_scores(self):
         """Plots the scores
@@ -151,12 +165,16 @@ class SUPER_ROC_Curves(object):
         for named_curves in self.curves:
             names.append(named_curves)
             x,y,s = self.curves[named_curves]
+            print(named_curves, x, y)
             x_vals.append(x)
             y_vals.append(y)
             scores.append(s)
         
         for i in range(len(x_vals)):
-            plt.plot(x_vals[i], y_vals[i], label="names[i]: {:.3f}".format(scores[i]))
+            plt.plot(x_vals[i], y_vals[i], label=names[i] + ": {:.3f}".format(scores[i]))
+            
+        plt.legend()
+        plt.tight_layout()
         plt.show()
 
 def ROC_curve(sample1, sample2):
@@ -193,7 +211,7 @@ def ROC_curve(sample1, sample2):
     # print(list(g4_phi_counts))
     
     ratios = sorted(
-        list(enumerate(hypo1_counts/hypo2_counts)), key=lambda x: x[1], reverse=True
+        list(enumerate(hypo2_counts/hypo1_counts)), key=lambda x: x[1], reverse=True
     )
     # print(ratios)
     

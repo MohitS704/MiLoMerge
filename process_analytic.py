@@ -1,4 +1,5 @@
 import numpy as np
+import pickle as pkl
 import tqdm
 
 def process_file(fname):
@@ -12,10 +13,16 @@ def process_file(fname):
             n, min, max = map(float, top_label[i:i+3])
             n = int(n)
             shape.append(n)
-            bin_edges = np.linspace(min, max, n)
+            bin_edges = np.linspace(min, max, n+1)
             edges.append(bin_edges)
         
         edges = np.array(edges, dtype=np.float32)
+        centers = (edges[:,1:] + edges[:,:-1])/2
+        print("edges\n",edges)
+        print("centers\n", centers)
+        with open(fname + '.pkl', 'wb+') as p:
+            pkl.dump((tuple(shape), edges, centers), p)
+        
         entries = f.readlines()
         # print(entries)
         n_total = np.prod(shape)
@@ -25,7 +32,8 @@ def process_file(fname):
         
         entries = np.fromiter(map(float, map(str.strip, entries)), dtype=np.float32)
         indices = map(lambda x: np.unravel_index(x, shape=shape), np.arange(n_total, dtype=np.int64))
-
+        values = {}
+        
         # print(len(entries), len(list(indices)))
         for index, entry in tqdm.tqdm(zip(indices, entries), desc="Dumping ", total=n_total, leave=True):
             fp[index] = entry

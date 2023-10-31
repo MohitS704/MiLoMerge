@@ -70,123 +70,24 @@
              
   <h1>Source code for brunelle_merger</h1><div class="highlight"><pre>
 <span></span><span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="k">as</span> <span class="nn">plt</span>
+<span class="kn">import</span> <span class="nn">mplhep</span> <span class="k">as</span> <span class="nn">hep</span>
+<span class="kn">import</span> <span class="nn">matplotlib</span> <span class="k">as</span> <span class="nn">mpl</span>
+<span class="kn">import</span> <span class="nn">histogram_helpers</span> <span class="k">as</span> <span class="nn">h</span>
+<span class="kn">import</span> <span class="nn">tqdm</span>
+<span class="kn">import</span> <span class="nn">jit_methods</span> <span class="k">as</span> <span class="nn">j</span>
+<span class="kn">import</span> <span class="nn">warnings</span>
+<span class="kn">import</span> <span class="nn">sys</span>
+<span class="kn">import</span> <span class="nn">numba</span> <span class="k">as</span> <span class="nn">nb</span>
 
-<div class="viewcode-block" id="print_msg_box"><a class="viewcode-back" href="../brunelle_merger.html#brunelle_merger.print_msg_box">[docs]</a><span class="k">def</span> <span class="nf">print_msg_box</span><span class="p">(</span><span class="n">msg</span><span class="p">,</span> <span class="n">indent</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">width</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">title</span><span class="o">=</span><span class="s2">&quot;&quot;</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;returns message-box with optional title.</span>
-<span class="sd">    Ripped from https://stackoverflow.com/questions/39969064/how-to-print-a-message-box-in-python</span>
-<span class="sd">    </span>
-<span class="sd">    Parameters</span>
-<span class="sd">    ----------</span>
-<span class="sd">    msg : str</span>
-<span class="sd">        The message to use</span>
-<span class="sd">    indent : int, optional</span>
-<span class="sd">        indent size, by default 1</span>
-<span class="sd">    width : int, optional</span>
-<span class="sd">        box width, by default 0</span>
-<span class="sd">    title : str, optional</span>
-<span class="sd">        box title, by default &quot;&quot;</span>
-<span class="sd">    &quot;&quot;&quot;</span>
-    
-    <span class="n">lines</span> <span class="o">=</span> <span class="n">msg</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;</span><span class="se">\n</span><span class="s1">&#39;</span><span class="p">)</span>
-    <span class="n">space</span> <span class="o">=</span> <span class="s2">&quot; &quot;</span> <span class="o">*</span> <span class="n">indent</span>
-    <span class="k">if</span> <span class="ow">not</span> <span class="n">width</span><span class="p">:</span>
-        <span class="n">width</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="nb">map</span><span class="p">(</span><span class="nb">len</span><span class="p">,</span> <span class="n">lines</span><span class="p">))</span>
-    <span class="n">box</span> <span class="o">=</span> <span class="sa">f</span><span class="s1">&#39;╔</span><span class="si">{</span><span class="s2">&quot;═&quot;</span> <span class="o">*</span> <span class="p">(</span><span class="n">width</span> <span class="o">+</span> <span class="n">indent</span> <span class="o">*</span> <span class="mi">2</span><span class="p">)</span><span class="si">}</span><span class="s1">╗</span><span class="se">\n</span><span class="s1">&#39;</span>  <span class="c1"># upper_border</span>
-    <span class="k">if</span> <span class="n">title</span><span class="p">:</span>
-        <span class="n">box</span> <span class="o">+=</span> <span class="sa">f</span><span class="s1">&#39;║</span><span class="si">{</span><span class="n">space</span><span class="si">}{</span><span class="n">title</span><span class="si">:</span><span class="s1">&lt;</span><span class="si">{</span><span class="n">width</span><span class="si">}}{</span><span class="n">space</span><span class="si">}</span><span class="s1">║</span><span class="se">\n</span><span class="s1">&#39;</span>  <span class="c1"># title</span>
-        <span class="n">box</span> <span class="o">+=</span> <span class="sa">f</span><span class="s1">&#39;║</span><span class="si">{</span><span class="n">space</span><span class="si">}{</span><span class="s2">&quot;-&quot;</span> <span class="o">*</span> <span class="nb">len</span><span class="p">(</span><span class="n">title</span><span class="p">)</span><span class="si">:</span><span class="s1">&lt;</span><span class="si">{</span><span class="n">width</span><span class="si">}}{</span><span class="n">space</span><span class="si">}</span><span class="s1">║</span><span class="se">\n</span><span class="s1">&#39;</span>  <span class="c1"># underscore</span>
-    <span class="n">box</span> <span class="o">+=</span> <span class="s1">&#39;&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="sa">f</span><span class="s1">&#39;║</span><span class="si">{</span><span class="n">space</span><span class="si">}{</span><span class="n">line</span><span class="si">:</span><span class="s1">&lt;</span><span class="si">{</span><span class="n">width</span><span class="si">}}{</span><span class="n">space</span><span class="si">}</span><span class="s1">║</span><span class="se">\n</span><span class="s1">&#39;</span> <span class="k">for</span> <span class="n">line</span> <span class="ow">in</span> <span class="n">lines</span><span class="p">])</span>
-    <span class="n">box</span> <span class="o">+=</span> <span class="sa">f</span><span class="s1">&#39;╚</span><span class="si">{</span><span class="s2">&quot;═&quot;</span> <span class="o">*</span> <span class="p">(</span><span class="n">width</span> <span class="o">+</span> <span class="n">indent</span> <span class="o">*</span> <span class="mi">2</span><span class="p">)</span><span class="si">}</span><span class="s1">╝&#39;</span>  <span class="c1"># lower_border</span>
-    <span class="k">return</span> <span class="n">box</span></div>
-
-<div class="viewcode-block" id="merge_bins"><a class="viewcode-back" href="../brunelle_merger.html#brunelle_merger.merge_bins">[docs]</a><span class="k">def</span> <span class="nf">merge_bins</span><span class="p">(</span><span class="n">target</span><span class="p">,</span> <span class="n">bins</span><span class="p">,</span> <span class="o">*</span><span class="n">counts</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;Merges a set of bins that are given based off of the counts provided</span>
-<span class="sd">    Eliminates any bin with a corresponding count that is less than the target</span>
-<span class="sd">    Useful to do merge_bins(\*np.histogram(data), ...)</span>
-<span class="sd">    </span>
-<span class="sd">    </span>
-<span class="sd">    Parameters</span>
-<span class="sd">    ----------</span>
-<span class="sd">    counts : numpy.ndarray</span>
-<span class="sd">        The counts of a histogram</span>
-<span class="sd">    bins : numpy.ndarray</span>
-<span class="sd">        The bins of a histogram</span>
-<span class="sd">    target : int, optional</span>
-<span class="sd">        The target value to achieve - any counts below this will be merged, by default 0</span>
-<span class="sd">    ab_val : bool, optional</span>
-<span class="sd">        If on, the target will consider the absolute value of the counts, not the actual value, by default True</span>
-<span class="sd">    drop_first : bool, optional</span>
-<span class="sd">        If on, the function will not automatically include the first bin edge, by default False</span>
-
-<span class="sd">    Returns</span>
-<span class="sd">    -------</span>
-<span class="sd">    Tuple(numpy.ndarray, numpy.ndarray)</span>
-<span class="sd">        A np.histogram object with the bins and counts merged</span>
-
-<span class="sd">    Raises</span>
-<span class="sd">    ------</span>
-<span class="sd">    ValueError</span>
-<span class="sd">        If the bins and counts are not sized properly the function will fail</span>
-<span class="sd">    &quot;&quot;&quot;</span>
-    
-    <span class="n">drop_first</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;drop_first&#39;</span><span class="p">,</span><span class="kc">False</span><span class="p">)</span>
-    <span class="n">ab_val</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;ab_val&#39;</span><span class="p">,</span> <span class="kc">True</span><span class="p">)</span>
-    
-    <span class="n">new_counts</span> <span class="o">=</span> <span class="p">[]</span>
-    <span class="p">[</span><span class="n">new_counts</span><span class="o">.</span><span class="n">append</span><span class="p">([])</span> <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="n">counts</span><span class="p">]</span>
-    
-    <span class="n">counts</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">vstack</span><span class="p">(</span><span class="n">counts</span><span class="p">)</span>
-    
-    <span class="k">if</span> <span class="nb">any</span><span class="p">([</span><span class="nb">len</span><span class="p">(</span><span class="n">bins</span><span class="p">)</span> <span class="o">!=</span> <span class="nb">len</span><span class="p">(</span><span class="n">count</span><span class="p">)</span> <span class="o">+</span> <span class="mi">1</span> <span class="k">for</span> <span class="n">count</span> <span class="ow">in</span> <span class="n">counts</span><span class="p">]):</span>
-        <span class="n">errortext</span> <span class="o">=</span> <span class="s2">&quot;Length of bins is </span><span class="si">{:.0f}</span><span class="s2">, lengths of counts are &quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">bins</span><span class="p">))</span>
-        <span class="n">errortext</span> <span class="o">+=</span> <span class="s2">&quot; &quot;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="nb">str</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">count</span><span class="p">))</span> <span class="k">for</span> <span class="n">count</span> <span class="ow">in</span> <span class="n">counts</span><span class="p">])</span>
-        <span class="n">errortext</span> <span class="o">+=</span> <span class="s2">&quot;</span><span class="se">\n</span><span class="s2">len(bins) should be len(counts) + 1!&quot;</span>
-        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span> <span class="o">+</span> <span class="n">errortext</span><span class="p">)</span>
-    
-    
-    <span class="k">if</span> <span class="ow">not</span> <span class="n">drop_first</span><span class="p">:</span>
-        <span class="n">new_bins</span> <span class="o">=</span> <span class="p">[</span><span class="n">bins</span><span class="p">[</span><span class="mi">0</span><span class="p">]]</span> <span class="c1">#the first bin edge is included automatically if not explicitly stated otherwise</span>
-    <span class="k">else</span><span class="p">:</span>
-        <span class="n">new_bins</span> <span class="o">=</span> <span class="p">[]</span>
-    
-    <span class="k">if</span> <span class="n">ab_val</span><span class="p">:</span>
-        <span class="n">counts</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">counts</span><span class="p">)</span>
-    
-    
-    <span class="n">i</span> <span class="o">=</span> <span class="mi">0</span>
-    <span class="k">while</span> <span class="n">i</span> <span class="o">&lt;</span> <span class="nb">len</span><span class="p">(</span><span class="n">counts</span><span class="p">[</span><span class="mi">0</span><span class="p">]):</span>
-        <span class="n">summation</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">counts</span><span class="p">))</span>
-        <span class="n">start</span> <span class="o">=</span> <span class="n">i</span>
-        <span class="c1"># print(&quot;starting iteration at:&quot;, i)</span>
-        <span class="c1"># print(&quot;Current running sum is ( {:.3f}, {:.3f} )&quot;.format(np.sum(new_counts[0]), np.sum(new_counts[1])))</span>
-        <span class="c1"># print(&quot;Running sum should be ( {:.3f}, {:.3f} )&quot;.format(*np.sum(counts[:,:i], axis=1)))</span>
-        <span class="k">while</span> <span class="n">np</span><span class="o">.</span><span class="n">any</span><span class="p">(</span><span class="n">summation</span> <span class="o">&lt;=</span> <span class="n">target</span><span class="p">)</span> <span class="ow">and</span> <span class="p">(</span><span class="n">i</span> <span class="o">&lt;</span> <span class="nb">len</span><span class="p">(</span><span class="n">counts</span><span class="p">[</span><span class="mi">0</span><span class="p">])):</span>
-            <span class="n">summation</span> <span class="o">+=</span> <span class="n">counts</span><span class="p">[:,</span><span class="n">i</span><span class="p">]</span>
-            <span class="n">i</span> <span class="o">+=</span> <span class="mi">1</span>
-        <span class="c1"># print(&quot;Merged counts&quot;, start, &quot;through&quot;, i-1)</span>
-        
-        <span class="k">if</span> <span class="n">drop_first</span> <span class="ow">and</span> <span class="nb">len</span><span class="p">(</span><span class="n">new_bins</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
-            <span class="n">first_bin</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="n">i</span> <span class="o">-</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
-            <span class="n">new_bins</span> <span class="o">+=</span> <span class="p">[</span><span class="n">bins</span><span class="p">[</span><span class="n">first_bin</span><span class="p">]]</span>
-            
-        <span class="k">if</span> <span class="ow">not</span><span class="p">(</span> <span class="n">np</span><span class="o">.</span><span class="n">any</span><span class="p">(</span><span class="n">summation</span> <span class="o">&lt;=</span> <span class="n">target</span><span class="p">)</span> <span class="ow">and</span> <span class="p">(</span><span class="n">i</span> <span class="o">==</span> <span class="nb">len</span><span class="p">(</span><span class="n">counts</span><span class="p">[</span><span class="mi">0</span><span class="p">]))</span> <span class="p">):</span>
-            <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">counts</span><span class="p">)):</span>
-                <span class="n">new_counts</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">+=</span> <span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">counts</span><span class="p">[</span><span class="n">k</span><span class="p">][</span><span class="n">start</span><span class="p">:</span><span class="n">i</span><span class="p">])]</span>
-            <span class="n">new_bins</span> <span class="o">+=</span> <span class="p">[</span><span class="n">bins</span><span class="p">[</span><span class="n">i</span><span class="p">]]</span>
-        <span class="k">else</span><span class="p">:</span>
-            <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">counts</span><span class="p">)):</span>
-                <span class="n">new_counts</span><span class="p">[</span><span class="n">k</span><span class="p">][</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">+=</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">counts</span><span class="p">[</span><span class="n">k</span><span class="p">][</span><span class="n">start</span><span class="p">:</span><span class="n">i</span><span class="p">])</span>
-            <span class="n">new_bins</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="n">bins</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
-        <span class="c1"># print(&quot;Current running sum is ( {:.3f}, {:.3f} )&quot;.format(np.sum(new_counts[0]), np.sum(new_counts[1])))</span>
-        <span class="c1"># print(&quot;Running sum should be ( {:.3f}, {:.3f} )&quot;.format(*np.sum(counts[:,:i], axis=1)))</span>
-        <span class="c1"># print()</span>
-        <span class="c1"># print()</span>
-    <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">vstack</span><span class="p">(</span><span class="n">new_counts</span><span class="p">),</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">new_bins</span><span class="p">)</span></div>
+<span class="c1"># plt.style.use(hep.style.ROOT)</span>
+<span class="c1"># mpl.rcParams[&#39;axes.labelsize&#39;] = 40</span>
+<span class="c1"># mpl.rcParams[&#39;xaxis.labellocation&#39;] = &#39;center&#39;</span>
 
 <div class="viewcode-block" id="Grim_Brunelle_merger"><a class="viewcode-back" href="../brunelle_merger.html#brunelle_merger.Grim_Brunelle_merger">[docs]</a><span class="k">class</span> <span class="nc">Grim_Brunelle_merger</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span><span class="c1">#Professor Nathan Brunelle!</span>
     <span class="c1">#https://engineering.virginia.edu/faculty/nathan-brunelle</span>
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">bins</span><span class="p">,</span> <span class="o">*</span><span class="n">counts</span><span class="p">,</span> <span class="n">stats_check</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">subtraction_metric</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">weights</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-        <span class="sd">&quot;&quot;&quot;This class is the base object for bin merging. It merges bins locally (by outting adjacent bins together).</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">bins</span><span class="p">,</span> <span class="o">*</span><span class="n">counts</span><span class="p">,</span> <span class="n">stats_check</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">subtraction_metric</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">weights</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">SM_version</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;This class is the base object for bin merging. It merges bins locally (by outting adjacent bins together).</span>
 <span class="sd">        Please only input 1 dimensional histograms! Should you need to operate upon a multidimensional histogram - please unroll them first.</span>
 
 <span class="sd">        Parameters</span>
@@ -202,6 +103,8 @@
 <span class="sd">            If you want to use the metric that does subtraction. If false, it uses version of the metric that uses division, by default True</span>
 <span class="sd">        weights : numpy.ndarray, optional</span>
 <span class="sd">            A list of weights of the same length as the number of counts put in for each hypothesis. If None all weights are 1, by default None</span>
+<span class="sd">        SM_version : bool, optional</span>
+<span class="sd">            Whether you are using the &quot;Standard Model&quot; version where samples are compared to the first set of inputted counts instead of to everything else</span>
 
 <span class="sd">        Raises</span>
 <span class="sd">        ------</span>
@@ -219,18 +122,18 @@
             <span class="n">errortext</span> <span class="o">=</span> <span class="p">[</span><span class="nb">str</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">count</span><span class="p">))</span> <span class="k">for</span> <span class="n">count</span> <span class="ow">in</span> <span class="n">counts</span><span class="p">]</span>
             <span class="n">errortext</span> <span class="o">=</span> <span class="s2">&quot; &quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">errortext</span><span class="p">)</span>
             <span class="n">errortext</span> <span class="o">=</span> <span class="s1">&#39;Not all counts have same length! Lengths are: &#39;</span> <span class="o">+</span> <span class="n">errortext</span>
-            <span class="n">errortext</span> <span class="o">=</span> <span class="n">print_msg_box</span><span class="p">(</span><span class="n">errortext</span><span class="p">,</span> <span class="n">title</span><span class="o">=</span><span class="s2">&quot;ERROR&quot;</span><span class="p">)</span>
+            <span class="n">errortext</span> <span class="o">=</span> <span class="n">h</span><span class="o">.</span><span class="n">print_msg_box</span><span class="p">(</span><span class="n">errortext</span><span class="p">,</span> <span class="n">title</span><span class="o">=</span><span class="s2">&quot;ERROR&quot;</span><span class="p">)</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;</span><span class="se">\n</span><span class="s1">&#39;</span><span class="o">+</span><span class="n">errortext</span><span class="p">)</span>
         
         <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">counts</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span> <span class="o">!=</span> <span class="nb">len</span><span class="p">(</span><span class="n">bins</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span><span class="p">:</span>
-            <span class="n">errortext</span> <span class="o">=</span> <span class="s2">&quot;Invalid lengths! </span><span class="si">{:.0f}</span><span class="s2"> != </span><span class="si">{:.0f}</span><span class="s2"> + 1&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">counts</span><span class="p">[</span><span class="mi">0</span><span class="p">]),</span> <span class="nb">len</span><span class="p">(</span><span class="n">bins</span><span class="p">))</span>
-            <span class="n">errortext</span> <span class="o">=</span> <span class="n">print_msg_box</span><span class="p">(</span><span class="n">errortext</span><span class="p">,</span> <span class="n">title</span><span class="o">=</span><span class="s2">&quot;ERROR&quot;</span><span class="p">)</span>
+            <span class="n">errortext</span> <span class="o">=</span> <span class="s2">&quot;Invalid lengths! </span><span class="si">{:.0f}</span><span class="s2"> != </span><span class="si">{:.0f}</span><span class="s2"> - 1&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">counts</span><span class="p">[</span><span class="mi">0</span><span class="p">]),</span> <span class="nb">len</span><span class="p">(</span><span class="n">bins</span><span class="p">))</span>
+            <span class="n">errortext</span> <span class="o">=</span> <span class="n">h</span><span class="o">.</span><span class="n">print_msg_box</span><span class="p">(</span><span class="n">errortext</span><span class="p">,</span> <span class="n">title</span><span class="o">=</span><span class="s2">&quot;ERROR&quot;</span><span class="p">)</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;</span><span class="se">\n</span><span class="s1">&#39;</span><span class="o">+</span><span class="n">errortext</span><span class="p">)</span>
 
         <span class="k">if</span> <span class="n">weights</span> <span class="o">!=</span> <span class="kc">None</span> <span class="ow">and</span> <span class="nb">len</span><span class="p">(</span><span class="n">weights</span><span class="p">)</span> <span class="o">!=</span> <span class="nb">len</span><span class="p">(</span><span class="n">counts</span><span class="p">):</span>
             <span class="n">errortext</span> <span class="o">=</span> <span class="s2">&quot;If using weights, the number of weight values and the number of hypotheses should be the same!&quot;</span>
             <span class="n">errortext</span> <span class="o">+=</span> <span class="s1">&#39;</span><span class="se">\n</span><span class="s1">Currently there are </span><span class="si">{:.0f}</span><span class="s1"> hypotheses and </span><span class="si">{:.0f}</span><span class="s1"> weight value(s)&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">counts</span><span class="p">),</span> <span class="nb">len</span><span class="p">(</span><span class="n">weights</span><span class="p">))</span>
-            <span class="n">errortext</span> <span class="o">=</span> <span class="n">print_msg_box</span><span class="p">(</span><span class="n">errortext</span><span class="p">)</span>
+            <span class="n">errortext</span> <span class="o">=</span> <span class="n">h</span><span class="o">.</span><span class="n">print_msg_box</span><span class="p">(</span><span class="n">errortext</span><span class="p">)</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;</span><span class="se">\n</span><span class="s1">&#39;</span><span class="o">+</span><span class="n">errortext</span><span class="p">)</span>
         
         <span class="k">if</span> <span class="n">weights</span> <span class="o">==</span> <span class="kc">None</span><span class="p">:</span>
@@ -245,6 +148,7 @@
 
         <span class="bp">self</span><span class="o">.</span><span class="n">original_bins</span> <span class="o">=</span> <span class="n">bins</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">original_counts</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">vstack</span><span class="p">(</span><span class="n">counts</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">original_counts</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">original_counts</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">float</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">original_counts</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">original_counts</span><span class="o">.</span><span class="n">T</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">original_counts</span> <span class="o">/=</span> <span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">original_counts</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">original_counts</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">original_counts</span><span class="o">.</span><span class="n">T</span>
@@ -254,7 +158,7 @@
         <span class="k">if</span> <span class="ow">not</span> <span class="n">stats_check</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">merged_counts</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">post_stats_merge_bins</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">original_counts</span><span class="o">.</span><span class="n">copy</span><span class="p">(),</span> <span class="bp">self</span><span class="o">.</span><span class="n">original_bins</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">merged_counts</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">post_stats_merge_bins</span> <span class="o">=</span> <span class="n">merge_bins</span><span class="p">(</span><span class="mf">0.05</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span> <span class="n">stats_for_mean</span> <span class="p">),</span> 
+            <span class="bp">self</span><span class="o">.</span><span class="n">merged_counts</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">post_stats_merge_bins</span> <span class="o">=</span> <span class="n">h</span><span class="o">.</span><span class="n">merge_bins</span><span class="p">(</span><span class="mf">0.05</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span> <span class="n">stats_for_mean</span> <span class="p">),</span> 
                                             <span class="n">bins</span><span class="p">,</span> 
                                             <span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">original_counts</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
                                             <span class="p">)</span>
@@ -265,60 +169,73 @@
         
         <span class="bp">self</span><span class="o">.</span><span class="n">counts_to_merge</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">merged_counts</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">counts_to_merge</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">merged_counts</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">float</span><span class="p">)</span>
+        
+        <span class="bp">self</span><span class="o">.</span><span class="n">SM_version</span> <span class="o">=</span> <span class="n">SM_version</span>
     
 <div class="viewcode-block" id="Grim_Brunelle_merger.reset"><a class="viewcode-back" href="../brunelle_merger.html#brunelle_merger.Grim_Brunelle_merger.reset">[docs]</a>    <span class="k">def</span> <span class="nf">reset</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Resets the state</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Resets the state</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">counts_to_merge</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">merged_counts</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">local_edges</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">post_stats_merge_bins</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">n_items</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">merged_counts</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span></div>
     
-<div class="viewcode-block" id="Grim_Brunelle_merger.__MLM__"><a class="viewcode-back" href="../brunelle_merger.html#brunelle_merger.Grim_Brunelle_merger.__MLM__">[docs]</a>    <span class="k">def</span> <span class="nf">__MLM__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">b</span><span class="p">,</span> <span class="n">bP</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;The distance function MLM</span>
+<div class="viewcode-block" id="Grim_Brunelle_merger.__MLM__"><a class="viewcode-back" href="../brunelle_merger.html#brunelle_merger.Grim_Brunelle_merger.__MLM__">[docs]</a>    <span class="nd">@staticmethod</span>
+    <span class="nd">@nb</span><span class="o">.</span><span class="n">njit</span>
+    <span class="k">def</span> <span class="nf">__MLM__</span><span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="n">counts</span><span class="p">,</span> <span class="n">weights</span><span class="p">,</span> <span class="n">b</span> <span class="p">,</span> <span class="n">bP</span><span class="p">,</span> <span class="n">subtraction_metric</span><span class="p">,</span> <span class="n">SM_version</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;This is the money function that calculates the metric</span>
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
+<span class="sd">        n : int</span>
+<span class="sd">            This is the input for self.n - i.e. the total number of entries in each set of counts</span>
+<span class="sd">        counts : numpy.ndarray</span>
+<span class="sd">            This is the input for self.counts_to_merge - i.e. the stacked set of histogram counts</span>
+<span class="sd">        weights : numpy.ndarray</span>
+<span class="sd">            This is the input for self.weights - i.e. the weight for each hypothesis</span>
 <span class="sd">        b : int</span>
-<span class="sd">            index 1 for the counts</span>
+<span class="sd">            The first bin number being compared</span>
 <span class="sd">        bP : int</span>
-<span class="sd">            index 2 for the counts</span>
+<span class="sd">            The second bin number being compared</span>
+<span class="sd">        subtraction_metric : bool</span>
+<span class="sd">            This is the input for self.subtraction_metric - i.e. whether to use the subtraction metric or the division metric</span>
+<span class="sd">        SM_version : bool</span>
+<span class="sd">            This is the input for self.SM_version - i.e. whether to compare everything to each other or just to the first input count</span>
 
 <span class="sd">        Returns</span>
-<span class="sd">        ------</span>
+<span class="sd">        -------</span>
 <span class="sd">        float</span>
-<span class="sd">            The distance metric between the two indices</span>
+<span class="sd">            A score for merging two histogram count entries</span>
 <span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">denomenator</span> <span class="o">=</span> <span class="n">numerator</span> <span class="o">=</span> <span class="mi">0</span>
         
-        <span class="n">counts</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">counts_to_merge</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
-        <span class="n">numerator</span> <span class="o">=</span> <span class="mi">0</span>
-        <span class="n">denomenator</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="n">initial_range</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">uint32</span><span class="p">)</span> <span class="k">if</span> <span class="n">SM_version</span> <span class="k">else</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">uint32</span><span class="p">)</span>
         
-        <span class="k">for</span> <span class="n">h</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">n</span><span class="p">):</span>
-            <span class="k">for</span> <span class="n">hP</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">h</span><span class="o">+</span><span class="mi">1</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">n</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">h</span> <span class="ow">in</span> <span class="n">initial_range</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">hP</span> <span class="ow">in</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">h</span><span class="o">+</span><span class="mi">1</span><span class="p">,</span> <span class="n">n</span><span class="p">):</span>
                 <span class="n">mat</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span>
                     <span class="p">[</span> <span class="n">counts</span><span class="p">[</span><span class="n">h</span><span class="p">][</span><span class="n">b</span><span class="p">],</span> <span class="n">counts</span><span class="p">[</span><span class="n">h</span><span class="p">][</span><span class="n">bP</span><span class="p">]</span> <span class="p">],</span>
                     <span class="p">[</span> <span class="n">counts</span><span class="p">[</span><span class="n">hP</span><span class="p">][</span><span class="n">b</span><span class="p">],</span> <span class="n">counts</span><span class="p">[</span><span class="n">hP</span><span class="p">][</span><span class="n">bP</span><span class="p">]</span> <span class="p">]</span>
-                <span class="p">],</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">)</span>
+                <span class="p">],</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">)</span>
                 
-                <span class="n">mat</span> <span class="o">*=</span> <span class="bp">self</span><span class="o">.</span><span class="n">weights</span><span class="p">[</span><span class="n">h</span><span class="p">][</span><span class="n">hP</span><span class="p">]</span>
+                <span class="n">mat</span> <span class="o">*=</span> <span class="n">weights</span><span class="p">[</span><span class="n">h</span><span class="p">][</span><span class="n">hP</span><span class="p">]</span>
                 <span class="c1"># print(&quot;tests&quot;)</span>
                 <span class="c1"># print(mat)</span>
                 <span class="c1"># print(counts[h][b], counts[h][bP], counts[hP][b], counts[hP][bP])</span>
                 <span class="c1"># print(2*np.prod(mat), 2*np.prod([counts[h][b], counts[h][bP], counts[hP][b], counts[hP][bP]]))</span>
                 <span class="c1"># print()</span>
-                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">subtraction_metric</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">subtraction_metric</span><span class="p">:</span>
                     <span class="n">numerator</span> <span class="o">+=</span> <span class="p">(</span><span class="n">mat</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span><span class="o">*</span><span class="n">mat</span><span class="p">[</span><span class="mi">1</span><span class="p">][</span><span class="mi">1</span><span class="p">])</span><span class="o">**</span><span class="mi">2</span> <span class="o">+</span> <span class="p">(</span><span class="n">mat</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="mi">1</span><span class="p">]</span><span class="o">*</span><span class="n">mat</span><span class="p">[</span><span class="mi">1</span><span class="p">][</span><span class="mi">0</span><span class="p">])</span><span class="o">**</span><span class="mi">2</span> <span class="o">-</span> <span class="mi">2</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">prod</span><span class="p">(</span><span class="n">mat</span><span class="p">)</span>
                 <span class="k">else</span><span class="p">:</span>
                     <span class="n">numerator</span> <span class="o">+=</span> <span class="p">(</span><span class="n">mat</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span><span class="o">*</span><span class="n">mat</span><span class="p">[</span><span class="mi">1</span><span class="p">][</span><span class="mi">1</span><span class="p">])</span><span class="o">**</span><span class="mi">2</span> <span class="o">+</span> <span class="p">(</span><span class="n">mat</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="mi">1</span><span class="p">]</span><span class="o">*</span><span class="n">mat</span><span class="p">[</span><span class="mi">1</span><span class="p">][</span><span class="mi">0</span><span class="p">])</span><span class="o">**</span><span class="mi">2</span>
                     <span class="n">denomenator</span> <span class="o">+=</span> <span class="n">np</span><span class="o">.</span><span class="n">prod</span><span class="p">(</span><span class="n">mat</span><span class="p">)</span>
                     
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">subtraction_metric</span><span class="p">:</span>
-            <span class="k">return</span> <span class="n">numerator</span><span class="c1">#/(2*denomenator)</span>
+        <span class="k">if</span> <span class="n">subtraction_metric</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">numerator</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="k">return</span> <span class="n">numerator</span><span class="o">/</span><span class="p">(</span><span class="mi">2</span><span class="o">*</span><span class="n">denomenator</span><span class="p">)</span></div>
     
 <div class="viewcode-block" id="Grim_Brunelle_merger.__merge__"><a class="viewcode-back" href="../brunelle_merger.html#brunelle_merger.Grim_Brunelle_merger.__merge__">[docs]</a>    <span class="k">def</span> <span class="nf">__merge__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">i</span><span class="p">,</span> <span class="n">j</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Merges bins together by bin count index</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Merges bins together by bin count index</span>
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
@@ -360,7 +277,7 @@
         <span class="k">return</span> <span class="p">(</span><span class="n">temp_counts</span><span class="p">,</span> <span class="n">temp_edges</span><span class="p">)</span></div>
     
 <div class="viewcode-block" id="Grim_Brunelle_merger.run"><a class="viewcode-back" href="../brunelle_merger.html#brunelle_merger.Grim_Brunelle_merger.run">[docs]</a>    <span class="k">def</span> <span class="nf">run</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">target_bin_number</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;runs the local bin merging</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;runs the local bin merging</span>
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
@@ -372,7 +289,12 @@
 <span class="sd">        Tuple(numpy.ndarray, numpy.ndarray)</span>
 <span class="sd">            a numpy histogram of the new counts and bins</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">n_items</span> <span class="o">&lt;=</span> <span class="n">target_bin_number</span><span class="p">:</span>
+            <span class="n">msg</span> <span class="o">=</span> <span class="s2">&quot;Bins requested &gt;= current number of bins!&quot;</span>
+            <span class="n">msg</span> <span class="o">+=</span> <span class="s2">&quot;</span><span class="se">\n</span><span class="s2">(</span><span class="si">{:.0f}</span><span class="s2"> &gt;= </span><span class="si">{:.0f}</span><span class="s2">)&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">target_bin_number</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">n_items</span><span class="p">)</span>
+            <span class="n">msg</span> <span class="o">+=</span> <span class="s2">&quot;</span><span class="se">\n</span><span class="s2">No merging will occur&quot;</span>
+            <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="o">+</span><span class="n">h</span><span class="o">.</span><span class="n">print_msg_box</span><span class="p">(</span><span class="n">msg</span><span class="p">,</span> <span class="n">title</span><span class="o">=</span><span class="s2">&quot;WARNING&quot;</span><span class="p">))</span>
+            
         <span class="k">while</span> <span class="bp">self</span><span class="o">.</span><span class="n">n_items</span> <span class="o">&gt;</span> <span class="n">target_bin_number</span><span class="p">:</span>
             <span class="n">combinations</span> <span class="o">=</span> <span class="p">{}</span>
             <span class="n">scores</span> <span class="o">=</span> <span class="p">{}</span>
@@ -380,11 +302,11 @@
             <span class="n">temp_counts</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">shape</span><span class="o">=</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">counts_to_merge</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="bp">self</span><span class="o">.</span><span class="n">counts_to_merge</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">-</span> <span class="mi">1</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">)</span>
             
             <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">n_items</span> <span class="o">-</span> <span class="mi">1</span><span class="p">):</span> <span class="c1">#don&#39;t merge edge bins/counts!</span>
-                <span class="n">score</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__MLM__</span><span class="p">(</span><span class="n">i</span><span class="p">,</span> <span class="n">i</span><span class="o">+</span><span class="mi">1</span><span class="p">)</span>
+                <span class="n">score</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__MLM__</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">n</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">counts_to_merge</span><span class="o">.</span><span class="n">copy</span><span class="p">(),</span> <span class="bp">self</span><span class="o">.</span><span class="n">weights</span><span class="o">.</span><span class="n">copy</span><span class="p">(),</span> <span class="n">i</span><span class="p">,</span> <span class="n">i</span><span class="o">+</span><span class="mi">1</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">subtraction_metric</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">SM_version</span><span class="p">)</span>
                 <span class="n">combinations</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="n">i</span><span class="p">,</span> <span class="n">i</span><span class="o">+</span><span class="mi">1</span><span class="p">)</span>
                 <span class="n">scores</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">score</span>
             
-            <span class="n">score</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__MLM__</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span> <span class="c1">#try merging counts 1 with count 0 (backwards)</span>
+            <span class="n">score</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__MLM__</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">n</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">counts_to_merge</span><span class="o">.</span><span class="n">copy</span><span class="p">(),</span> <span class="bp">self</span><span class="o">.</span><span class="n">weights</span><span class="o">.</span><span class="n">copy</span><span class="p">(),</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">subtraction_metric</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">SM_version</span><span class="p">)</span> <span class="c1">#try merging counts 1 with count 0 (backwards)</span>
             <span class="n">combinations</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
             <span class="n">scores</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="n">score</span>
             <span class="n">i1</span><span class="p">,</span> <span class="n">i2</span> <span class="o">=</span> <span class="n">combinations</span><span class="p">[</span> <span class="nb">min</span><span class="p">(</span><span class="n">scores</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="n">scores</span><span class="o">.</span><span class="n">get</span><span class="p">)</span> <span class="p">]</span>
@@ -400,7 +322,7 @@
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">counts_to_merge</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">local_edges</span></div>
     
 <div class="viewcode-block" id="Grim_Brunelle_merger.run_local_faster"><a class="viewcode-back" href="../brunelle_merger.html#brunelle_merger.Grim_Brunelle_merger.run_local_faster">[docs]</a>    <span class="k">def</span> <span class="nf">run_local_faster</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">target_bin_number</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;attempts to run faster - needs to be debugged. WIP</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;attempts to run faster - needs to be debugged. WIP</span>
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
@@ -458,90 +380,9 @@
             
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">counts_to_merge</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">local_edges</span></div></div>
 
-
-<div class="viewcode-block" id="Grim_Brunelle_with_standard_model"><a class="viewcode-back" href="../brunelle_merger.html#brunelle_merger.Grim_Brunelle_with_standard_model">[docs]</a><span class="k">class</span> <span class="nc">Grim_Brunelle_with_standard_model</span><span class="p">(</span><span class="n">Grim_Brunelle_merger</span><span class="p">):</span>
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">bins</span><span class="p">,</span> <span class="o">*</span><span class="n">counts</span><span class="p">,</span> <span class="n">stats_check</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">subtraction_metric</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">weights</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-        <span class="sd">&quot;&quot;&quot;This class  merges bins locally (by outting adjacent bins together) by comparing each item to a &quot;Standard Model&quot; sample.</span>
-<span class="sd">        The first set of counts that are input will be treated as the standard model sample.</span>
-<span class="sd">        Please only input 1 dimensional histograms! Should you need to operate upon a multidimensional histogram - please unroll them first.</span>
-
-<span class="sd">        Parameters</span>
-<span class="sd">        ----------</span>
-<span class="sd">        bins : numpy.ndarray</span>
-<span class="sd">            These are your bin edges</span>
-<span class="sd">        counts : numpy.ndarray</span>
-<span class="sd">            These are a set of bin counts put in as args. Place an unlimited number of them -  each one corresponds to a different hypothesis. </span>
-<span class="sd">            The first array that is input will be the &quot;Standard Model&quot; sample.</span>
-<span class="sd">            Both bins and counts can be created using numpy.histogram()</span>
-<span class="sd">        stats_check : bool, optional</span>
-<span class="sd">            If you want to insert a statistics check enable this option, by default True</span>
-<span class="sd">        subtraction_metric : bool, optional</span>
-<span class="sd">            If you want to use the metric that does subtraction. If false, it uses version of the metric that uses division, by default True</span>
-<span class="sd">        weights : numpy.ndarray, optional</span>
-<span class="sd">            A list of weights of the same length as the number of counts put in for each hypothesis. If None all weights are 1, by default None</span>
-
-<span class="sd">        Raises</span>
-<span class="sd">        ------</span>
-<span class="sd">        ValueError</span>
-<span class="sd">            If your bin counts are not all the same length, raise an error</span>
-<span class="sd">        ValueError</span>
-<span class="sd">            If len(counts) != len(bins) - 1 then raise an error</span>
-<span class="sd">        ValueError</span>
-<span class="sd">            If len(weights) != len(counts) then raise an error</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">bins</span><span class="p">,</span> <span class="o">*</span><span class="n">counts</span><span class="p">,</span> <span class="n">stats_check</span><span class="o">=</span><span class="n">stats_check</span><span class="p">,</span> <span class="n">subtraction_metric</span><span class="o">=</span><span class="n">subtraction_metric</span><span class="p">,</span> <span class="n">weights</span><span class="o">=</span><span class="n">weights</span><span class="p">)</span>
-        
-        <span class="bp">self</span><span class="o">.</span><span class="n">weights</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">weights</span><span class="p">)</span>
-        
-        
-<div class="viewcode-block" id="Grim_Brunelle_with_standard_model.__MLM__"><a class="viewcode-back" href="../brunelle_merger.html#brunelle_merger.Grim_Brunelle_with_standard_model.__MLM__">[docs]</a>    <span class="k">def</span> <span class="nf">__MLM__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">b</span><span class="p">,</span> <span class="n">bP</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;The distance function MLM - edited to perform only comparisons with the &quot;Standard Model&quot; sample.</span>
-
-<span class="sd">        Parameters</span>
-<span class="sd">        ----------</span>
-<span class="sd">        b : int</span>
-<span class="sd">            index 1 for the counts</span>
-<span class="sd">        bP : int</span>
-<span class="sd">            index 2 for the counts</span>
-
-<span class="sd">        Returns</span>
-<span class="sd">        ------</span>
-<span class="sd">        float</span>
-<span class="sd">            The distance metric between the two indices</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        
-        <span class="n">counts</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">counts_to_merge</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
-        <span class="n">numerator</span> <span class="o">=</span> <span class="mi">0</span>
-        <span class="n">denomenator</span> <span class="o">=</span> <span class="mi">0</span>
-        
-        <span class="n">h</span> <span class="o">=</span> <span class="mi">0</span>
-        <span class="k">for</span> <span class="n">hP</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">n</span><span class="p">):</span>
-            <span class="n">mat</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span>
-                <span class="p">[</span> <span class="n">counts</span><span class="p">[</span><span class="n">h</span><span class="p">][</span><span class="n">b</span><span class="p">],</span> <span class="n">counts</span><span class="p">[</span><span class="n">h</span><span class="p">][</span><span class="n">bP</span><span class="p">]</span> <span class="p">],</span>
-                <span class="p">[</span> <span class="n">counts</span><span class="p">[</span><span class="n">hP</span><span class="p">][</span><span class="n">b</span><span class="p">],</span> <span class="n">counts</span><span class="p">[</span><span class="n">hP</span><span class="p">][</span><span class="n">bP</span><span class="p">]</span> <span class="p">]</span>
-            <span class="p">],</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">)</span>
-            
-            <span class="n">mat</span> <span class="o">*=</span> <span class="bp">self</span><span class="o">.</span><span class="n">weights</span><span class="p">[</span><span class="n">hP</span><span class="p">]</span>
-            <span class="c1"># print(&quot;tests&quot;)</span>
-            <span class="c1"># print(mat)</span>
-            <span class="c1"># print(counts[h][b], counts[h][bP], counts[hP][b], counts[hP][bP])</span>
-            <span class="c1"># print(2*np.prod(mat), 2*np.prod([counts[h][b], counts[h][bP], counts[hP][b], counts[hP][bP]]))</span>
-            <span class="c1"># print()</span>
-            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">subtraction_metric</span><span class="p">:</span>
-                <span class="n">numerator</span> <span class="o">+=</span> <span class="p">(</span><span class="n">mat</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span><span class="o">*</span><span class="n">mat</span><span class="p">[</span><span class="mi">1</span><span class="p">][</span><span class="mi">1</span><span class="p">])</span><span class="o">**</span><span class="mi">2</span> <span class="o">+</span> <span class="p">(</span><span class="n">mat</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="mi">1</span><span class="p">]</span><span class="o">*</span><span class="n">mat</span><span class="p">[</span><span class="mi">1</span><span class="p">][</span><span class="mi">0</span><span class="p">])</span><span class="o">**</span><span class="mi">2</span> <span class="o">-</span> <span class="mi">2</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">prod</span><span class="p">(</span><span class="n">mat</span><span class="p">)</span>
-            <span class="k">else</span><span class="p">:</span>
-                <span class="n">numerator</span> <span class="o">+=</span> <span class="p">(</span><span class="n">mat</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span><span class="o">*</span><span class="n">mat</span><span class="p">[</span><span class="mi">1</span><span class="p">][</span><span class="mi">1</span><span class="p">])</span><span class="o">**</span><span class="mi">2</span> <span class="o">+</span> <span class="p">(</span><span class="n">mat</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="mi">1</span><span class="p">]</span><span class="o">*</span><span class="n">mat</span><span class="p">[</span><span class="mi">1</span><span class="p">][</span><span class="mi">0</span><span class="p">])</span><span class="o">**</span><span class="mi">2</span>
-                <span class="n">denomenator</span> <span class="o">+=</span> <span class="n">np</span><span class="o">.</span><span class="n">prod</span><span class="p">(</span><span class="n">mat</span><span class="p">)</span>
-                    
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">subtraction_metric</span><span class="p">:</span>
-            <span class="k">return</span> <span class="n">numerator</span><span class="c1">#/(2*denomenator)</span>
-        <span class="k">else</span><span class="p">:</span>
-            <span class="k">return</span> <span class="n">numerator</span><span class="o">/</span><span class="p">(</span><span class="mi">2</span><span class="o">*</span><span class="n">denomenator</span><span class="p">)</span></div></div>
-
-
 <div class="viewcode-block" id="Grim_Brunelle_nonlocal"><a class="viewcode-back" href="../brunelle_merger.html#brunelle_merger.Grim_Brunelle_nonlocal">[docs]</a><span class="k">class</span> <span class="nc">Grim_Brunelle_nonlocal</span><span class="p">(</span><span class="n">Grim_Brunelle_merger</span><span class="p">):</span>
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">bins</span><span class="p">,</span> <span class="o">*</span><span class="n">counts</span><span class="p">,</span> <span class="n">stats_check</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">subtraction_metric</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">weights</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-        <span class="sd">&quot;&quot;&quot;This class is the base object for bin merging. </span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">bins</span><span class="p">,</span> <span class="o">*</span><span class="n">counts</span><span class="p">,</span> <span class="n">stats_check</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">subtraction_metric</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">weights</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">SM_version</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;This class is the base object for bin merging. </span>
 <span class="sd">        It merges bins nonlocally - so the bins no longer contain any physical meaning afterwards.</span>
 <span class="sd">        Please only input 1 dimensional histograms! Should you need to operate upon a multidimensional histogram - please unroll them first.</span>
 
@@ -558,6 +399,8 @@
 <span class="sd">            If you want to use the metric that does subtraction. If false, it uses version of the metric that uses division, by default True</span>
 <span class="sd">        weights : numpy.ndarray, optional</span>
 <span class="sd">            A list of weights of the same length as the number of counts put in for each hypothesis. If None all weights are 1, by default None</span>
+<span class="sd">        SM_version : bool, optional</span>
+<span class="sd">            Whether you are using the &quot;Standard Model&quot; version where samples are compared to the first set of inputted counts instead of to everything else</span>
 
 <span class="sd">        Raises</span>
 <span class="sd">        ------</span>
@@ -568,36 +411,124 @@
 <span class="sd">        ValueError</span>
 <span class="sd">            If len(weights) != len(counts) then raise an error</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">bins</span><span class="p">,</span> <span class="o">*</span><span class="n">counts</span><span class="p">,</span> <span class="n">stats_check</span><span class="o">=</span><span class="n">stats_check</span><span class="p">,</span> <span class="n">subtraction_metric</span><span class="o">=</span><span class="n">subtraction_metric</span><span class="p">,</span> <span class="n">weights</span><span class="o">=</span><span class="n">weights</span><span class="p">)</span>
+        <span class="n">bins</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">bins</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">physical_bins</span> <span class="o">=</span> <span class="n">bins</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">n_observables</span> <span class="o">=</span> <span class="n">bins</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">bins</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">1</span> <span class="k">else</span> <span class="mi">1</span>
+        <span class="c1"># print(self.n_observables)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">original_counts_shape</span> <span class="o">=</span> <span class="n">counts</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">shape</span>
+        
+        <span class="n">unrolled</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="nb">map</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="o">.</span><span class="n">ravel</span><span class="p">,</span> <span class="n">counts</span><span class="p">))</span>
+        <span class="n">bins</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">unrolled</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span>
+        
+        
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">bins</span><span class="p">,</span> <span class="o">*</span><span class="n">unrolled</span><span class="p">,</span> <span class="n">stats_check</span><span class="o">=</span><span class="n">stats_check</span><span class="p">,</span> <span class="n">subtraction_metric</span><span class="o">=</span><span class="n">subtraction_metric</span><span class="p">,</span> <span class="n">weights</span><span class="o">=</span><span class="n">weights</span><span class="p">,</span> <span class="n">SM_version</span><span class="o">=</span><span class="n">SM_version</span><span class="p">)</span>
     
-        <span class="bp">self</span><span class="o">.</span><span class="n">tracker</span> <span class="o">=</span> <span class="p">[</span> <span class="p">{}</span> <span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">tracker</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">full</span><span class="p">((</span><span class="bp">self</span><span class="o">.</span><span class="n">n_items</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">n_items</span><span class="p">),</span><span class="n">np</span><span class="o">.</span><span class="n">nan</span><span class="p">,</span> <span class="nb">object</span><span class="p">)</span>
+        
         <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">n_items</span><span class="p">):</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">tracker</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="n">i</span><span class="p">,</span> <span class="n">i</span><span class="p">)</span> <span class="c1">#record where it started, and where it ended</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">tracker</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">n_items</span> <span class="o">-</span> <span class="mi">1</span><span class="p">][</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">([</span><span class="n">i</span><span class="p">])</span> <span class="c1">#record where it started, and where it ended</span>
+            
+        <span class="bp">self</span><span class="o">.</span><span class="n">things_to_recalculate</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">([</span><span class="n">i</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">n_items</span><span class="p">)])</span>
+        
+        <span class="bp">self</span><span class="o">.</span><span class="n">scores</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="bp">self</span><span class="o">.</span><span class="n">n_items</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">n_items</span><span class="p">))</span>
     
-<div class="viewcode-block" id="Grim_Brunelle_nonlocal.__trace__"><a class="viewcode-back" href="../brunelle_merger.html#brunelle_merger.Grim_Brunelle_nonlocal.__trace__">[docs]</a>    <span class="k">def</span> <span class="nf">__trace__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">i</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;WIP. Trying to trace the placement of where bins go</span>
-
+<div class="viewcode-block" id="Grim_Brunelle_nonlocal.dump_edges"><a class="viewcode-back" href="../brunelle_merger.html#brunelle_merger.Grim_Brunelle_nonlocal.dump_edges">[docs]</a>    <span class="k">def</span> <span class="nf">dump_edges</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">fname</span><span class="o">=</span><span class="s2">&quot;&quot;</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;This function dumps everything into files of your choice. </span>
+<span class="sd">        The tool for placement is put into the python function file</span>
+<span class="sd">        It will also dump the tracker into a numpy memorymap .mm file</span>
+<span class="sd">        </span>
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
-<span class="sd">        i : int</span>
-<span class="sd">            index i</span>
-
-<span class="sd">        Returns</span>
-<span class="sd">        -------</span>
-<span class="sd">        int</span>
-<span class="sd">            what index i used to be</span>
+<span class="sd">        fname : str, optional</span>
+<span class="sd">            The filename you want to output to. If none is given it will dump to &quot;dumped&quot;, by default &quot;&quot;</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="c1"># print(self.tracker)</span>
-        <span class="n">og_i</span> <span class="o">=</span> <span class="n">i</span>
-        <span class="k">while</span> <span class="bp">self</span><span class="o">.</span><span class="n">tracker</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">][</span><span class="n">i</span><span class="p">][</span><span class="mi">1</span><span class="p">]</span> <span class="o">!=</span> <span class="n">i</span><span class="p">:</span>
-            <span class="c1"># print(&quot;Trying to match&quot;, i, &quot;with&quot;, self.tracker[i])</span>
-            <span class="n">i</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">tracker</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">][</span><span class="n">i</span><span class="p">][</span><span class="mi">1</span><span class="p">]</span>
-        <span class="nb">print</span><span class="p">(</span><span class="n">og_i</span><span class="p">,</span> <span class="s2">&quot;points to&quot;</span><span class="p">,</span> <span class="n">i</span><span class="p">)</span>
-        <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;</span><span class="se">\n</span><span class="s1">&#39;</span><span class="p">)</span>
-        <span class="k">return</span> <span class="n">i</span></div>
+        
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">fname</span><span class="p">:</span>
+            <span class="n">fname</span> <span class="o">=</span> <span class="s2">&quot;dumped&quot;</span>
+            
+        <span class="n">bin_map</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">memmap</span><span class="p">(</span><span class="n">fname</span><span class="o">+</span><span class="s2">&quot;.mm&quot;</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">int32</span><span class="p">,</span> <span class="n">shape</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">tracker</span><span class="o">.</span><span class="n">shape</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="s1">&#39;w+&#39;</span><span class="p">)</span>
+        <span class="n">bin_map</span><span class="p">[:]</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span>
+        <span class="k">for</span> <span class="n">n_bins</span><span class="p">,</span> <span class="n">set_of_bins</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">tracker</span><span class="p">):</span>
+            <span class="k">for</span> <span class="n">new_bin</span><span class="p">,</span> <span class="n">bin_tuple</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">set_of_bins</span><span class="p">):</span>
+                <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">bin_tuple</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">):</span>
+                    <span class="k">continue</span>
+                <span class="k">for</span> <span class="n">index</span> <span class="ow">in</span> <span class="n">bin_tuple</span><span class="p">:</span>
+                    <span class="n">bin_map</span><span class="p">[</span><span class="n">n_bins</span><span class="p">][</span><span class="n">index</span><span class="p">]</span> <span class="o">=</span> <span class="n">new_bin</span>
+        
+        <span class="n">np</span><span class="o">.</span><span class="n">set_printoptions</span><span class="p">(</span><span class="n">threshold</span><span class="o">=</span><span class="n">sys</span><span class="o">.</span><span class="n">maxsize</span><span class="p">)</span>
+        <span class="n">edges_str</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array2string</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">physical_bins</span><span class="p">,</span> <span class="n">separator</span><span class="o">=</span><span class="s1">&#39;,&#39;</span><span class="p">,</span> <span class="n">formatter</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;float_kind&#39;</span><span class="p">:</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="s2">&quot;</span><span class="si">%.3f</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="n">x</span><span class="p">},</span> <span class="n">max_line_width</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">inf</span><span class="p">)</span>
+        
+        <span class="n">docstr</span> <span class="o">=</span> <span class="s1">&#39;&#39;&#39;&quot;&quot;&quot;**place_entry** will place a set of observables into a given bin index from a previous optimization</span>
+
+<span class="s1">	Parameters</span>
+<span class="s1">	----------</span>
+<span class="s1">	N : int</span>
+<span class="s1">		The number of bins that you want total</span>
+<span class="s1">	observables : numpy.ndarray</span>
+<span class="s1">		A _1-d_ array of observables that you want to to place</span>
+<span class="s1">	verbose : bool, optional</span>
+<span class="s1">		Set to True if you want to print verbose options, by default False</span>
+
+<span class="s1">	Returns</span>
+<span class="s1">	-------</span>
+<span class="s1">	int</span>
+<span class="s1">		The bin index in range [0, N) that the observables will be placed at</span>
+
+<span class="s1">	Raises</span>
+<span class="s1">	------</span>
+<span class="s1">	ValueError</span>
+<span class="s1">		len(observables) must be equal to the shape of bin edges</span>
+<span class="s1">	ValueError</span>
+<span class="s1">		You asked for fewer bins than is possible!</span>
+<span class="s1">	&quot;&quot;&quot;&#39;&#39;&#39;</span>
+        
+        
+        <span class="n">code</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;import numpy as np&quot;</span><span class="p">]</span>
+        <span class="n">code</span> <span class="o">+=</span> <span class="p">[</span><span class="s2">&quot;def place_entry(N, observables, verbose=False):&quot;</span><span class="p">]</span>
+        <span class="n">code</span> <span class="o">=</span> <span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">code</span><span class="p">)</span>
+        
+        <span class="n">func</span> <span class="o">=</span> <span class="p">[</span><span class="n">docstr</span><span class="p">]</span>
+        <span class="n">func</span> <span class="o">+=</span> <span class="p">[</span><span class="s2">&quot;if len(observables) != </span><span class="si">{:.0f}</span><span class="s2">:&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">n_observables</span><span class="p">)]</span>
+        <span class="n">func</span> <span class="o">+=</span> <span class="p">[</span><span class="s2">&quot;</span><span class="se">\t</span><span class="s2">raise ValueError(&#39;Must input </span><span class="si">{:.0f}</span><span class="s2"> observables for this histogram!&#39;)&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">n_observables</span><span class="p">)]</span>
+        <span class="n">func</span> <span class="o">+=</span> <span class="p">[</span><span class="s2">&quot;observables = np.array(observables, dtype=np.float64)&quot;</span><span class="p">]</span>
+        <span class="n">func</span> <span class="o">+=</span> <span class="p">[</span><span class="s2">&quot;edges=np.array(&quot;</span><span class="o">+</span><span class="n">edges_str</span> <span class="o">+</span> <span class="s2">&quot;)&quot;</span><span class="p">]</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">n_observables</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="n">func</span> <span class="o">+=</span> <span class="p">[</span><span class="s2">&quot;observables = observables.reshape(1, edges.shape[0])&quot;</span><span class="p">]</span>
+            <span class="n">func</span> <span class="o">+=</span> <span class="p">[</span><span class="s2">&quot;counts, *_ = np.histogramdd(observables, edges)&quot;</span><span class="p">]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">func</span> <span class="o">+=</span> <span class="p">[</span><span class="s2">&quot;counts, *_ = np.histogram(observables, edges)&quot;</span><span class="p">]</span>
+        <span class="n">func</span> <span class="o">+=</span> <span class="p">[</span><span class="s2">&quot;nonzero_rolled = np.fromiter(map( lambda x: x[0], np.nonzero(counts)), dtype=np.uint64)&quot;</span><span class="p">]</span>
+        <span class="n">func</span> <span class="o">+=</span> <span class="p">[</span><span class="s2">&quot;if verbose:&quot;</span><span class="p">]</span>
+        <span class="n">func</span> <span class="o">+=</span> <span class="p">[</span><span class="s2">&quot;</span><span class="se">\t</span><span class="s2">print(&#39;original index of:&#39;, nonzero_rolled)&quot;</span><span class="p">]</span>
+        <span class="n">func</span> <span class="o">+=</span> <span class="p">[</span><span class="s2">&quot;</span><span class="se">\t</span><span class="s2">print(&#39;This places your point in the range:&#39;)&quot;</span><span class="p">]</span>
+        <span class="n">func</span> <span class="o">+=</span> <span class="p">[</span><span class="s2">&quot;</span><span class="se">\t</span><span class="s2">for i in range(edges.shape[0]):&quot;</span><span class="p">]</span>
+        <span class="n">func</span> <span class="o">+=</span> <span class="p">[</span><span class="s2">&quot;</span><span class="se">\t\t</span><span class="s2">print(&#39;[&#39;, edges[i][nonzero_rolled[i]], &#39;,&#39;, edges[i][int(nonzero_rolled[i]+1)], &#39;]&#39;)&quot;</span><span class="p">]</span>
+        <span class="n">func</span> <span class="o">+=</span> <span class="p">[</span><span class="s2">&quot;counts = counts.ravel()&quot;</span><span class="p">]</span>
+        <span class="n">func</span> <span class="o">+=</span> <span class="p">[</span><span class="s2">&quot;nonzero = np.nonzero(counts)&quot;</span><span class="p">]</span>
+        <span class="n">func</span> <span class="o">+=</span> <span class="p">[</span><span class="s2">&quot;mapping = np.memmap(&#39;&quot;</span><span class="o">+</span><span class="n">fname</span><span class="o">+</span> <span class="s2">&quot;.mm&#39;, dtype=np.int32, mode=&#39;r&#39;, shape=&quot;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">tracker</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span> <span class="o">+</span> <span class="s2">&quot;)&quot;</span><span class="p">]</span>
+        <span class="n">func</span> <span class="o">+=</span> <span class="p">[</span><span class="s2">&quot;mapped_val = mapping[N-1][nonzero]&quot;</span><span class="p">]</span>
+        <span class="n">func</span> <span class="o">+=</span> <span class="p">[</span><span class="s2">&quot;if mapped_val &lt; 0:&quot;</span><span class="p">]</span>
+        <span class="n">func</span> <span class="o">+=</span> <span class="p">[</span><span class="s2">&quot;</span><span class="se">\t</span><span class="s2">raise ValueError(&#39;number of bins: &#39; + str(N) + &#39; was not calculated &#39;)&quot;</span><span class="p">]</span>
+        <span class="n">func</span> <span class="o">+=</span> <span class="p">[</span><span class="s2">&quot;return mapped_val[0]&quot;</span><span class="p">]</span>
+        
+        <span class="n">func</span> <span class="o">=</span> <span class="s2">&quot;</span><span class="se">\n\t</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">func</span><span class="p">)</span>
+        <span class="n">func</span> <span class="o">=</span> <span class="s2">&quot;</span><span class="se">\n\t</span><span class="s2">&quot;</span> <span class="o">+</span> <span class="n">func</span>
+        
+        <span class="n">code2</span> <span class="o">=</span> <span class="s2">&quot;</span><span class="se">\n</span><span class="s2">def help():&quot;</span>
+        <span class="n">helper</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;text = &quot;</span> <span class="o">+</span> <span class="n">docstr</span><span class="p">]</span>
+        <span class="n">helper</span> <span class="o">+=</span> <span class="p">[</span><span class="s2">&quot;print(text)&quot;</span><span class="p">]</span>
+        <span class="n">helper</span> <span class="o">+=</span> <span class="p">[</span><span class="s2">&quot;exit()&quot;</span><span class="p">]</span>
+        <span class="n">helper</span> <span class="o">=</span> <span class="s2">&quot;</span><span class="se">\n\t</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">helper</span><span class="p">)</span>
+        <span class="n">helper</span> <span class="o">=</span> <span class="s2">&quot;</span><span class="se">\n\t</span><span class="s2">&quot;</span> <span class="o">+</span> <span class="n">helper</span>
+        
+        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">fname</span><span class="o">+</span><span class="s2">&quot;.py&quot;</span><span class="p">,</span> <span class="s2">&quot;w+&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+            <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">code</span><span class="p">)</span>
+            <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">func</span><span class="p">)</span>
+            <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">code2</span><span class="p">)</span>
+            <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">helper</span><span class="p">)</span></div>
     
-<div class="viewcode-block" id="Grim_Brunelle_nonlocal.__merge__"><a class="viewcode-back" href="../brunelle_merger.html#brunelle_merger.Grim_Brunelle_nonlocal.__merge__">[docs]</a>    <span class="k">def</span> <span class="nf">__merge__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">i</span><span class="p">,</span> <span class="n">j</span><span class="p">,</span> <span class="n">track</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Merges bins together by bin count index</span>
+<div class="viewcode-block" id="Grim_Brunelle_nonlocal.__merge__"><a class="viewcode-back" href="../brunelle_merger.html#brunelle_merger.Grim_Brunelle_nonlocal.__merge__">[docs]</a>    <span class="k">def</span> <span class="nf">__merge__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">i</span><span class="p">,</span> <span class="n">j</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Merges bins together by bin count index</span>
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
@@ -605,8 +536,6 @@
 <span class="sd">            index i</span>
 <span class="sd">        j : int</span>
 <span class="sd">            index j</span>
-<span class="sd">        track : bool, optional</span>
-<span class="sd">            Whether you would like to track the placement of where the original bins go in the nonlocal case, by default False</span>
 
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
@@ -615,26 +544,37 @@
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">merged_counts</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">shape</span><span class="o">=</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">n</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">n_items</span> <span class="o">-</span> <span class="mi">1</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">)</span>
         <span class="n">k</span> <span class="o">=</span> <span class="mi">0</span>
+        
         <span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">n_items</span><span class="p">):</span>
             <span class="k">if</span> <span class="n">n</span> <span class="o">!=</span> <span class="n">i</span> <span class="ow">and</span> <span class="n">n</span> <span class="o">!=</span> <span class="n">j</span><span class="p">:</span>
-                <span class="k">if</span> <span class="n">track</span><span class="p">:</span>
-                    <span class="bp">self</span><span class="o">.</span><span class="n">tracker</span><span class="p">[</span><span class="n">n</span><span class="p">]</span> <span class="o">=</span> <span class="n">k</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">tracker</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">n_items</span> <span class="o">-</span> <span class="mi">2</span><span class="p">][</span><span class="n">k</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">tracker</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">n_items</span> <span class="o">-</span> <span class="mi">1</span><span class="p">][</span><span class="n">n</span><span class="p">]</span>
                 <span class="n">merged_counts</span><span class="p">[:,</span><span class="n">k</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">counts_to_merge</span><span class="p">[:,</span><span class="n">n</span><span class="p">]</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">scores</span><span class="p">[:,</span><span class="n">k</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">scores</span><span class="p">[:,</span><span class="n">n</span><span class="p">]</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">scores</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">scores</span><span class="p">[</span><span class="n">n</span><span class="p">]</span>
+                
                 <span class="n">k</span> <span class="o">+=</span> <span class="mi">1</span>
         
-        <span class="k">if</span> <span class="n">track</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">tracker</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">k</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">tracker</span><span class="p">[</span><span class="n">j</span><span class="p">]</span> <span class="o">=</span> <span class="n">k</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">tracker</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">n_items</span> <span class="o">-</span> <span class="mi">2</span><span class="p">][</span><span class="n">k</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">tracker</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">n_items</span> <span class="o">-</span> <span class="mi">1</span><span class="p">][</span><span class="n">i</span><span class="p">]</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">tracker</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">n_items</span> <span class="o">-</span> <span class="mi">1</span><span class="p">][</span><span class="n">j</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">things_to_recalculate</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">([</span><span class="n">k</span><span class="p">])</span>
         
         <span class="n">merged_counts</span><span class="p">[:,</span><span class="n">k</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">counts_to_merge</span><span class="p">[:,</span><span class="n">i</span><span class="p">]</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">counts_to_merge</span><span class="p">[:,</span><span class="n">j</span><span class="p">]</span> <span class="c1">#shove everything into the final bin</span>
+        
+        <span class="k">for</span> <span class="n">wipe</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">k</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">scores</span><span class="p">)):</span> 
+            <span class="c1">#wipe away rows and columns that are no longer being considered</span>
+            <span class="c1">#(i.e. phasespace moves down from 5 bins to 4, wipe scores from old bin 5)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">scores</span><span class="p">[</span><span class="n">wipe</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">inf</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">scores</span><span class="p">[:,</span><span class="n">wipe</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">inf</span>
+            
         <span class="bp">self</span><span class="o">.</span><span class="n">n_items</span> <span class="o">-=</span> <span class="mi">1</span>
         
         <span class="bp">self</span><span class="o">.</span><span class="n">counts_to_merge</span> <span class="o">=</span> <span class="n">merged_counts</span>
         
+        <span class="c1"># self.tracker[self.n_items - 1] = current_iteration_tracker</span>
+        
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">counts_to_merge</span></div>
 
 <div class="viewcode-block" id="Grim_Brunelle_nonlocal.__closest_pair__"><a class="viewcode-back" href="../brunelle_merger.html#brunelle_merger.Grim_Brunelle_nonlocal.__closest_pair__">[docs]</a>    <span class="k">def</span> <span class="nf">__closest_pair__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;A simple function to find the closest pair of points between any two bins nonlocally</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;A simple function to find the closest pair of points between any two bins nonlocally</span>
 
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
@@ -649,25 +589,27 @@
         <span class="c1"># print(&quot;USING INDICES:&quot;, indices, &quot;With BRUTE_FORCE=&quot;, brute_force)</span>
         <span class="n">smallest_distance</span> <span class="o">=</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">inf</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
         <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">n_items</span><span class="p">):</span>
-            <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">i</span><span class="p">):</span>
-                <span class="n">temp_dist</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__MLM__</span><span class="p">(</span><span class="n">i</span><span class="p">,</span> <span class="n">j</span><span class="p">)</span>
-                <span class="k">if</span> <span class="n">temp_dist</span> <span class="o">&lt;</span> <span class="n">smallest_distance</span><span class="p">[</span><span class="mi">0</span><span class="p">]:</span>
-                    <span class="n">smallest_distance</span> <span class="o">=</span> <span class="p">(</span><span class="n">temp_dist</span><span class="p">,</span> <span class="n">i</span><span class="p">,</span> <span class="n">j</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">things_to_recalculate</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">i</span> <span class="o">==</span> <span class="n">j</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">scores</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="n">j</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">inf</span>
+                    <span class="k">continue</span>
+                
+                <span class="bp">self</span><span class="o">.</span><span class="n">scores</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="n">j</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__MLM__</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">n</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">counts_to_merge</span><span class="o">.</span><span class="n">copy</span><span class="p">(),</span> <span class="bp">self</span><span class="o">.</span><span class="n">weights</span><span class="o">.</span><span class="n">copy</span><span class="p">(),</span> <span class="n">i</span><span class="p">,</span> <span class="n">j</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">subtraction_metric</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">SM_version</span><span class="p">)</span>
+        <span class="n">smallest_distance_index</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">unravel_index</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">scores</span><span class="o">.</span><span class="n">argmin</span><span class="p">(),</span> <span class="bp">self</span><span class="o">.</span><span class="n">scores</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
+        <span class="n">smallest_distance</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">scores</span><span class="p">[</span><span class="n">smallest_distance_index</span><span class="p">],</span> <span class="o">*</span><span class="n">smallest_distance_index</span>
         
         <span class="k">if</span> <span class="ow">not</span> <span class="n">np</span><span class="o">.</span><span class="n">isfinite</span><span class="p">(</span><span class="n">smallest_distance</span><span class="p">[</span><span class="mi">0</span><span class="p">]):</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Distance function has produced nan/inf at some point with value&quot;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">smallest_distance</span><span class="p">[</span><span class="mi">0</span><span class="p">]))</span>
         
         <span class="k">return</span> <span class="n">smallest_distance</span></div>
     
-<div class="viewcode-block" id="Grim_Brunelle_nonlocal.run"><a class="viewcode-back" href="../brunelle_merger.html#brunelle_merger.Grim_Brunelle_nonlocal.run">[docs]</a>    <span class="k">def</span> <span class="nf">run</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">target_bin_number</span><span class="p">,</span> <span class="n">track</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;runs the nonlocal binning</span>
+<div class="viewcode-block" id="Grim_Brunelle_nonlocal.run"><a class="viewcode-back" href="../brunelle_merger.html#brunelle_merger.Grim_Brunelle_nonlocal.run">[docs]</a>    <span class="k">def</span> <span class="nf">run</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">target_bin_number</span><span class="o">=</span><span class="mi">1</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;runs the nonlocal binning</span>
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
 <span class="sd">        target_bin_number : int</span>
 <span class="sd">            the number of bins you want</span>
-<span class="sd">        track : bool, optional</span>
-<span class="sd">            Whether you would like to track the placement of where the original bins go in the nonlocal case, by default False</span>
 
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
@@ -675,91 +617,58 @@
 <span class="sd">            a numpy histogram of the new counts and bins</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         
-        <span class="c1"># print(&quot;RUNNING NONLOCAL&quot;, self.n_items, target_bin_number)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">n_items</span> <span class="o">&lt;=</span> <span class="n">target_bin_number</span><span class="p">:</span>
+            <span class="n">msg</span> <span class="o">=</span> <span class="s2">&quot;Bins requested &gt;= current number of bins!&quot;</span>
+            <span class="n">msg</span> <span class="o">+=</span> <span class="s2">&quot;</span><span class="se">\n</span><span class="s2">(</span><span class="si">{:.0f}</span><span class="s2"> &gt;= </span><span class="si">{:.0f}</span><span class="s2">)&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">target_bin_number</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">n_items</span><span class="p">)</span>
+            <span class="n">msg</span> <span class="o">+=</span> <span class="s2">&quot;</span><span class="se">\n</span><span class="s2">No merging will occur&quot;</span>
+            <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="o">+</span><span class="n">h</span><span class="o">.</span><span class="n">print_msg_box</span><span class="p">(</span><span class="n">msg</span><span class="p">,</span> <span class="n">title</span><span class="o">=</span><span class="s2">&quot;WARNING&quot;</span><span class="p">))</span>
+            
+        <span class="n">pbar</span> <span class="o">=</span> <span class="n">tqdm</span><span class="o">.</span><span class="n">tqdm</span><span class="p">(</span><span class="n">total</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">n_items</span> <span class="o">-</span> <span class="n">target_bin_number</span><span class="p">)</span>
         <span class="k">while</span> <span class="bp">self</span><span class="o">.</span><span class="n">n_items</span> <span class="o">&gt;</span> <span class="n">target_bin_number</span><span class="p">:</span>
             <span class="n">distance</span><span class="p">,</span> <span class="n">i</span><span class="p">,</span> <span class="n">j</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__closest_pair__</span><span class="p">()</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">__merge__</span><span class="p">(</span><span class="n">i</span><span class="p">,</span><span class="n">j</span><span class="p">,</span> <span class="n">track</span><span class="o">=</span><span class="n">track</span><span class="p">)</span>
-    
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">counts_to_merge</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">n_items</span><span class="o">+</span><span class="mi">1</span><span class="p">))</span></div></div>
-    
-<div class="viewcode-block" id="Grim_Brunelle_nonlocal_with_standard_model"><a class="viewcode-back" href="../brunelle_merger.html#brunelle_merger.Grim_Brunelle_nonlocal_with_standard_model">[docs]</a><span class="k">class</span> <span class="nc">Grim_Brunelle_nonlocal_with_standard_model</span><span class="p">(</span><span class="n">Grim_Brunelle_nonlocal</span><span class="p">):</span>
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">bins</span><span class="p">,</span> <span class="o">*</span><span class="n">counts</span><span class="p">,</span> <span class="n">stats_check</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">subtraction_metric</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">weights</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-        <span class="sd">&quot;&quot;&quot;This class will perform nonlocal bin merging by comparing each item to a &quot;Standard Model&quot; sample.</span>
-<span class="sd">        The first set of counts that are input will be treated as the standard model sample.</span>
-<span class="sd">        It merges bins nonlocally - so the bins no longer contain any physical meaning afterwards.</span>
-<span class="sd">        Please only input 1 dimensional histograms! Should you need to operate upon a multidimensional histogram - please unroll them first.</span>
-
-<span class="sd">        Parameters</span>
-<span class="sd">        ----------</span>
-<span class="sd">        bins : numpy.ndarray</span>
-<span class="sd">            These are your bin edges</span>
-<span class="sd">        counts : numpy.ndarray</span>
-<span class="sd">            These are a set of bin counts put in as args. Place an unlimited number of them -  each one corresponds to a different hypothesis. </span>
-<span class="sd">            The first array that is input will be the &quot;Standard Model&quot; sample.</span>
-<span class="sd">            Both bins and counts can be created using numpy.histogram()</span>
-<span class="sd">        stats_check : bool, optional</span>
-<span class="sd">            If you want to insert a statistics check enable this option, by default True</span>
-<span class="sd">        subtraction_metric : bool, optional</span>
-<span class="sd">            If you want to use the metric that does subtraction. If false, it uses version of the metric that uses division, by default True</span>
-<span class="sd">        weights : numpy.ndarray, optional</span>
-<span class="sd">            A list of weights of the same length as the number of counts put in for each hypothesis. If None all weights are 1, by default None</span>
-
-<span class="sd">        Raises</span>
-<span class="sd">        ------</span>
-<span class="sd">        ValueError</span>
-<span class="sd">            If your bin counts are not all the same length, raise an error</span>
-<span class="sd">        ValueError</span>
-<span class="sd">            If len(counts) != len(bins) - 1 then raise an error</span>
-<span class="sd">        ValueError</span>
-<span class="sd">            If len(weights) != len(counts) then raise an error</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">bins</span><span class="p">,</span> <span class="o">*</span><span class="n">counts</span><span class="p">,</span> <span class="n">stats_check</span><span class="o">=</span><span class="n">stats_check</span><span class="p">,</span> <span class="n">subtraction_metric</span><span class="o">=</span><span class="n">subtraction_metric</span><span class="p">,</span> <span class="n">weights</span><span class="o">=</span><span class="n">weights</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">weights</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">weights</span><span class="p">)</span>
-        
-        
-<div class="viewcode-block" id="Grim_Brunelle_nonlocal_with_standard_model.__MLM__"><a class="viewcode-back" href="../brunelle_merger.html#brunelle_merger.Grim_Brunelle_nonlocal_with_standard_model.__MLM__">[docs]</a>    <span class="k">def</span> <span class="nf">__MLM__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">b</span><span class="p">,</span> <span class="n">bP</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;The distance function MLM</span>
-
-<span class="sd">        Parameters</span>
-<span class="sd">        ----------</span>
-<span class="sd">        b : int</span>
-<span class="sd">            index 1 for the counts</span>
-<span class="sd">        bP : int</span>
-<span class="sd">            index 2 for the counts</span>
-
-<span class="sd">        Returns</span>
-<span class="sd">        ------</span>
-<span class="sd">        float</span>
-<span class="sd">            The distance metric between the two indices</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        
-        <span class="n">counts</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">counts_to_merge</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
-        <span class="n">numerator</span> <span class="o">=</span> <span class="mi">0</span>
-        <span class="n">denomenator</span> <span class="o">=</span> <span class="mi">0</span>
-        
-        <span class="n">h</span> <span class="o">=</span> <span class="mi">0</span>
-        <span class="k">for</span> <span class="n">hP</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">n</span><span class="p">):</span>
-            <span class="n">mat</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span>
-                <span class="p">[</span> <span class="n">counts</span><span class="p">[</span><span class="n">h</span><span class="p">][</span><span class="n">b</span><span class="p">],</span> <span class="n">counts</span><span class="p">[</span><span class="n">h</span><span class="p">][</span><span class="n">bP</span><span class="p">]</span> <span class="p">],</span>
-                <span class="p">[</span> <span class="n">counts</span><span class="p">[</span><span class="n">hP</span><span class="p">][</span><span class="n">b</span><span class="p">],</span> <span class="n">counts</span><span class="p">[</span><span class="n">hP</span><span class="p">][</span><span class="n">bP</span><span class="p">]</span> <span class="p">]</span>
-            <span class="p">],</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">)</span>
-            
-            <span class="n">mat</span> <span class="o">*=</span> <span class="bp">self</span><span class="o">.</span><span class="n">weights</span><span class="p">[</span><span class="n">hP</span><span class="p">]</span>
-            <span class="c1"># print(&quot;tests&quot;)</span>
-            <span class="c1"># print(mat)</span>
-            <span class="c1"># print(counts[h][b], counts[h][bP], counts[hP][b], counts[hP][bP])</span>
-            <span class="c1"># print(2*np.prod(mat), 2*np.prod([counts[h][b], counts[h][bP], counts[hP][b], counts[hP][bP]]))</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">__merge__</span><span class="p">(</span><span class="n">i</span><span class="p">,</span><span class="n">j</span><span class="p">)</span>
+            <span class="n">pbar</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
             <span class="c1"># print()</span>
-            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">subtraction_metric</span><span class="p">:</span>
-                <span class="n">numerator</span> <span class="o">+=</span> <span class="p">(</span><span class="n">mat</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span><span class="o">*</span><span class="n">mat</span><span class="p">[</span><span class="mi">1</span><span class="p">][</span><span class="mi">1</span><span class="p">])</span><span class="o">**</span><span class="mi">2</span> <span class="o">+</span> <span class="p">(</span><span class="n">mat</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="mi">1</span><span class="p">]</span><span class="o">*</span><span class="n">mat</span><span class="p">[</span><span class="mi">1</span><span class="p">][</span><span class="mi">0</span><span class="p">])</span><span class="o">**</span><span class="mi">2</span> <span class="o">-</span> <span class="mi">2</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">prod</span><span class="p">(</span><span class="n">mat</span><span class="p">)</span>
+    
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">counts_to_merge</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">n_items</span><span class="o">+</span><span class="mi">1</span><span class="p">))</span></div>
+    
+<div class="viewcode-block" id="Grim_Brunelle_nonlocal.visualize_changes"><a class="viewcode-back" href="../brunelle_merger.html#brunelle_merger.Grim_Brunelle_nonlocal.visualize_changes">[docs]</a>    <span class="k">def</span> <span class="nf">visualize_changes</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">n</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">xlabel</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">fname</span><span class="o">=</span><span class="s2">&quot;&quot;</span><span class="p">):</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">tracker</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="n">errortext</span> <span class="o">=</span> <span class="s2">&quot;Need to have used the run command with track=True to visualize this!&quot;</span>
+            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s1">&#39;</span><span class="se">\n</span><span class="s1">&#39;</span> <span class="o">+</span> <span class="n">h</span><span class="o">.</span><span class="n">print_msg_box</span><span class="p">(</span><span class="n">errortext</span><span class="p">,</span> <span class="n">title</span><span class="o">=</span><span class="s2">&quot;ERROR&quot;</span><span class="p">))</span>
+        
+        <span class="n">plt</span><span class="o">.</span><span class="n">close</span><span class="p">(</span><span class="s1">&#39;all&#39;</span><span class="p">)</span>
+        <span class="k">with</span> <span class="n">plt</span><span class="o">.</span><span class="n">style</span><span class="o">.</span><span class="n">context</span><span class="p">(</span><span class="n">hep</span><span class="o">.</span><span class="n">style</span><span class="o">.</span><span class="n">CMS</span><span class="p">):</span>
+            <span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">10</span><span class="p">,</span><span class="mi">7</span><span class="p">),</span> <span class="n">facecolor</span><span class="o">=</span><span class="s1">&#39;white&#39;</span><span class="p">)</span>
+            <span class="n">centers</span> <span class="o">=</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">post_stats_merge_bins</span><span class="p">[</span><span class="mi">1</span><span class="p">:]</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">post_stats_merge_bins</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span><span class="o">/</span><span class="mi">2</span>
+            
+            <span class="k">if</span> <span class="n">n</span> <span class="o">==</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">n</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">n_items</span>
+            
+            <span class="n">color_wheel</span> <span class="o">=</span> <span class="nb">iter</span><span class="p">(</span><span class="n">plt</span><span class="o">.</span><span class="n">cm</span><span class="o">.</span><span class="n">rainbow</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="n">n</span><span class="p">)))</span>
+            <span class="k">for</span> <span class="n">bin_row</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">tracker</span><span class="p">[</span><span class="n">n</span> <span class="o">-</span> <span class="mi">1</span><span class="p">]:</span>
+                <span class="c1"># indices = self.__trace__(bin_index, len(self.tracker) - 1)</span>
+                <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">bin_row</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">)</span> <span class="ow">and</span> <span class="n">np</span><span class="o">.</span><span class="n">isnan</span><span class="p">(</span><span class="n">bin_row</span><span class="p">):</span>
+                    <span class="k">continue</span>
+                <span class="n">indices</span> <span class="o">=</span> <span class="n">bin_row</span>
+                <span class="n">c</span> <span class="o">=</span> <span class="nb">next</span><span class="p">(</span><span class="n">color_wheel</span><span class="p">)</span>
+                <span class="k">for</span> <span class="n">index</span> <span class="ow">in</span> <span class="n">indices</span><span class="p">:</span>
+                    <span class="n">plt</span><span class="o">.</span><span class="n">scatter</span><span class="p">(</span><span class="n">centers</span><span class="p">[</span><span class="n">index</span><span class="p">],</span> <span class="bp">self</span><span class="o">.</span><span class="n">merged_counts</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="n">index</span><span class="p">],</span> <span class="n">color</span><span class="o">=</span><span class="n">c</span><span class="p">,</span> <span class="n">marker</span><span class="o">=</span><span class="s1">&#39;.&#39;</span><span class="p">,</span> <span class="n">s</span><span class="o">=</span><span class="mi">25</span><span class="p">)</span>
+                    <span class="n">plt</span><span class="o">.</span><span class="n">scatter</span><span class="p">(</span><span class="n">centers</span><span class="p">[</span><span class="n">index</span><span class="p">],</span> <span class="bp">self</span><span class="o">.</span><span class="n">merged_counts</span><span class="p">[</span><span class="mi">1</span><span class="p">][</span><span class="n">index</span><span class="p">],</span> <span class="n">color</span><span class="o">=</span><span class="n">c</span><span class="p">,</span> <span class="n">marker</span><span class="o">=</span><span class="s1">&#39;x&#39;</span><span class="p">,</span> <span class="n">s</span><span class="o">=</span><span class="mi">25</span><span class="p">)</span>
+                    <span class="n">plt</span><span class="o">.</span><span class="n">scatter</span><span class="p">(</span><span class="n">centers</span><span class="p">[</span><span class="n">index</span><span class="p">],</span> <span class="bp">self</span><span class="o">.</span><span class="n">merged_counts</span><span class="p">[</span><span class="mi">2</span><span class="p">][</span><span class="n">index</span><span class="p">],</span> <span class="n">color</span><span class="o">=</span><span class="n">c</span><span class="p">,</span> <span class="n">marker</span><span class="o">=</span><span class="s1">&#39;1&#39;</span><span class="p">,</span> <span class="n">s</span><span class="o">=</span><span class="mi">25</span><span class="p">)</span>
+            
+            <span class="k">if</span> <span class="n">xlabel</span> <span class="o">==</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="s2">&quot;Distribution Clustering&quot;</span>
             <span class="k">else</span><span class="p">:</span>
-                <span class="n">numerator</span> <span class="o">+=</span> <span class="p">(</span><span class="n">mat</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span><span class="o">*</span><span class="n">mat</span><span class="p">[</span><span class="mi">1</span><span class="p">][</span><span class="mi">1</span><span class="p">])</span><span class="o">**</span><span class="mi">2</span> <span class="o">+</span> <span class="p">(</span><span class="n">mat</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="mi">1</span><span class="p">]</span><span class="o">*</span><span class="n">mat</span><span class="p">[</span><span class="mi">1</span><span class="p">][</span><span class="mi">0</span><span class="p">])</span><span class="o">**</span><span class="mi">2</span>
-                <span class="n">denomenator</span> <span class="o">+=</span> <span class="n">np</span><span class="o">.</span><span class="n">prod</span><span class="p">(</span><span class="n">mat</span><span class="p">)</span>
-                    
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">subtraction_metric</span><span class="p">:</span>
-            <span class="k">return</span> <span class="n">numerator</span><span class="c1">#/(2*denomenator)</span>
-        <span class="k">else</span><span class="p">:</span>
-            <span class="k">return</span> <span class="n">numerator</span><span class="o">/</span><span class="p">(</span><span class="mi">2</span><span class="o">*</span><span class="n">denomenator</span><span class="p">)</span></div></div>
+                <span class="n">xlabel</span> <span class="o">=</span> <span class="s2">&quot;Nonlocal clustering for &quot;</span> <span class="o">+</span> <span class="n">xlabel</span>
+            <span class="n">plt</span><span class="o">.</span><span class="n">title</span><span class="p">(</span><span class="s2">&quot;Merging Non-locally to </span><span class="si">{:.0f}</span><span class="s2"> bins from </span><span class="si">{:.0f}</span><span class="s2"> bins&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">merged_counts</span><span class="p">[</span><span class="mi">0</span><span class="p">])))</span>
+            <span class="n">plt</span><span class="o">.</span><span class="n">xlabel</span><span class="p">(</span><span class="n">xlabel</span><span class="p">)</span>
+            <span class="n">plt</span><span class="o">.</span><span class="n">tight_layout</span><span class="p">()</span>
+            <span class="k">if</span> <span class="n">fname</span><span class="p">:</span>
+                <span class="n">plt</span><span class="o">.</span><span class="n">savefig</span><span class="p">(</span><span class="n">fname</span> <span class="o">+</span> <span class="s1">&#39;.png&#39;</span><span class="p">)</span>
+                <span class="c1"># plt.show()</span>
+            <span class="n">plt</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">tracker</span></div></div>
 </pre></div>
 
            </div>

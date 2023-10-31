@@ -80,7 +80,7 @@
 <span id="brunelle-merger-module"></span><h1>brunelle_merger module<a class="headerlink" href="#module-brunelle_merger" title="Permalink to this heading"></a></h1>
 <dl class="py class">
 <dt class="sig sig-object py" id="brunelle_merger.Grim_Brunelle_merger">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">brunelle_merger.</span></span><span class="sig-name descname"><span class="pre">Grim_Brunelle_merger</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">bins</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">counts</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">stats_check</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">subtraction_metric</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">weights</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/brunelle_merger.html#Grim_Brunelle_merger"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#brunelle_merger.Grim_Brunelle_merger" title="Permalink to this definition"></a></dt>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">brunelle_merger.</span></span><span class="sig-name descname"><span class="pre">Grim_Brunelle_merger</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">bins</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">counts</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">stats_check</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">subtraction_metric</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">weights</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">SM_version</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/brunelle_merger.html#Grim_Brunelle_merger"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#brunelle_merger.Grim_Brunelle_merger" title="Permalink to this definition"></a></dt>
 <dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/functions.html#object" title="(in Python v3.12)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a></p>
 <p>This class is the base object for bin merging. It merges bins locally (by outting adjacent bins together).
 Please only input 1 dimensional histograms! Should you need to operate upon a multidimensional histogram - please unroll them first.</p>
@@ -93,6 +93,7 @@ Both bins and counts can be created using numpy.histogram()</p></li>
 <li><p><strong>stats_check</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.12)"><em>bool</em></a><em>, </em><em>optional</em>) – If you want to insert a statistics check enable this option, by default True</p></li>
 <li><p><strong>subtraction_metric</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.12)"><em>bool</em></a><em>, </em><em>optional</em>) – If you want to use the metric that does subtraction. If false, it uses version of the metric that uses division, by default True</p></li>
 <li><p><strong>weights</strong> (<a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v1.26)"><em>numpy.ndarray</em></a><em>, </em><em>optional</em>) – A list of weights of the same length as the number of counts put in for each hypothesis. If None all weights are 1, by default None</p></li>
+<li><p><strong>SM_version</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.12)"><em>bool</em></a><em>, </em><em>optional</em>) – Whether you are using the “Standard Model” version where samples are compared to the first set of inputted counts instead of to everything else</p></li>
 </ul>
 </dd>
 <dt class="field-even">Raises<span class="colon">:</span></dt>
@@ -105,17 +106,22 @@ Both bins and counts can be created using numpy.histogram()</p></li>
 </dl>
 <dl class="py method">
 <dt class="sig sig-object py" id="brunelle_merger.Grim_Brunelle_merger.__MLM__">
-<span class="sig-name descname"><span class="pre">__MLM__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">b</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">bP</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/brunelle_merger.html#Grim_Brunelle_merger.__MLM__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#brunelle_merger.Grim_Brunelle_merger.__MLM__" title="Permalink to this definition"></a></dt>
-<dd><p>The distance function MLM</p>
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">__MLM__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">n</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">counts</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">weights</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">b</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">bP</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">subtraction_metric</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">SM_version</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/brunelle_merger.html#Grim_Brunelle_merger.__MLM__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#brunelle_merger.Grim_Brunelle_merger.__MLM__" title="Permalink to this definition"></a></dt>
+<dd><p>This is the money function that calculates the metric</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>b</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.12)"><em>int</em></a>) – index 1 for the counts</p></li>
-<li><p><strong>bP</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.12)"><em>int</em></a>) – index 2 for the counts</p></li>
+<li><p><strong>n</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.12)"><em>int</em></a>) – This is the input for self.n - i.e. the total number of entries in each set of counts</p></li>
+<li><p><strong>counts</strong> (<a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v1.26)"><em>numpy.ndarray</em></a>) – This is the input for self.counts_to_merge - i.e. the stacked set of histogram counts</p></li>
+<li><p><strong>weights</strong> (<a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v1.26)"><em>numpy.ndarray</em></a>) – This is the input for self.weights - i.e. the weight for each hypothesis</p></li>
+<li><p><strong>b</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.12)"><em>int</em></a>) – The first bin number being compared</p></li>
+<li><p><strong>bP</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.12)"><em>int</em></a>) – The second bin number being compared</p></li>
+<li><p><strong>subtraction_metric</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.12)"><em>bool</em></a>) – This is the input for self.subtraction_metric - i.e. whether to use the subtraction metric or the division metric</p></li>
+<li><p><strong>SM_version</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.12)"><em>bool</em></a>) – This is the input for self.SM_version - i.e. whether to compare everything to each other or just to the first input count</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p>The distance metric between the two indices</p>
+<dd class="field-even"><p>A score for merging two histogram count entries</p>
 </dd>
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
 <dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.12)">float</a></p>
@@ -193,7 +199,7 @@ Both bins and counts can be created using numpy.histogram()</p></li>
 
 <dl class="py class">
 <dt class="sig sig-object py" id="brunelle_merger.Grim_Brunelle_nonlocal">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">brunelle_merger.</span></span><span class="sig-name descname"><span class="pre">Grim_Brunelle_nonlocal</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">bins</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">counts</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">stats_check</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">subtraction_metric</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">weights</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/brunelle_merger.html#Grim_Brunelle_nonlocal"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#brunelle_merger.Grim_Brunelle_nonlocal" title="Permalink to this definition"></a></dt>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">brunelle_merger.</span></span><span class="sig-name descname"><span class="pre">Grim_Brunelle_nonlocal</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">bins</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">counts</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">stats_check</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">subtraction_metric</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">weights</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">SM_version</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/brunelle_merger.html#Grim_Brunelle_nonlocal"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#brunelle_merger.Grim_Brunelle_nonlocal" title="Permalink to this definition"></a></dt>
 <dd><p>Bases: <a class="reference internal" href="#brunelle_merger.Grim_Brunelle_merger" title="brunelle_merger.Grim_Brunelle_merger"><code class="xref py py-class docutils literal notranslate"><span class="pre">Grim_Brunelle_merger</span></code></a></p>
 <p>This class is the base object for bin merging.
 It merges bins nonlocally - so the bins no longer contain any physical meaning afterwards.
@@ -207,6 +213,7 @@ Both bins and counts can be created using numpy.histogram()</p></li>
 <li><p><strong>stats_check</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.12)"><em>bool</em></a><em>, </em><em>optional</em>) – If you want to insert a statistics check enable this option, by default True</p></li>
 <li><p><strong>subtraction_metric</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.12)"><em>bool</em></a><em>, </em><em>optional</em>) – If you want to use the metric that does subtraction. If false, it uses version of the metric that uses division, by default True</p></li>
 <li><p><strong>weights</strong> (<a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v1.26)"><em>numpy.ndarray</em></a><em>, </em><em>optional</em>) – A list of weights of the same length as the number of counts put in for each hypothesis. If None all weights are 1, by default None</p></li>
+<li><p><strong>SM_version</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.12)"><em>bool</em></a><em>, </em><em>optional</em>) – Whether you are using the “Standard Model” version where samples are compared to the first set of inputted counts instead of to everything else</p></li>
 </ul>
 </dd>
 <dt class="field-even">Raises<span class="colon">:</span></dt>
@@ -236,14 +243,13 @@ Both bins and counts can be created using numpy.histogram()</p></li>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="brunelle_merger.Grim_Brunelle_nonlocal.__merge__">
-<span class="sig-name descname"><span class="pre">__merge__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">i</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">j</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">track</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/brunelle_merger.html#Grim_Brunelle_nonlocal.__merge__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#brunelle_merger.Grim_Brunelle_nonlocal.__merge__" title="Permalink to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">__merge__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">i</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">j</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/brunelle_merger.html#Grim_Brunelle_nonlocal.__merge__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#brunelle_merger.Grim_Brunelle_nonlocal.__merge__" title="Permalink to this definition"></a></dt>
 <dd><p>Merges bins together by bin count index</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>i</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.12)"><em>int</em></a>) – index i</p></li>
 <li><p><strong>j</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.12)"><em>int</em></a>) – index j</p></li>
-<li><p><strong>track</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.12)"><em>bool</em></a><em>, </em><em>optional</em>) – Whether you would like to track the placement of where the original bins go in the nonlocal case, by default False</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
@@ -256,32 +262,25 @@ Both bins and counts can be created using numpy.histogram()</p></li>
 </dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="brunelle_merger.Grim_Brunelle_nonlocal.__trace__">
-<span class="sig-name descname"><span class="pre">__trace__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">i</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/brunelle_merger.html#Grim_Brunelle_nonlocal.__trace__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#brunelle_merger.Grim_Brunelle_nonlocal.__trace__" title="Permalink to this definition"></a></dt>
-<dd><p>WIP. Trying to trace the placement of where bins go</p>
+<dt class="sig sig-object py" id="brunelle_merger.Grim_Brunelle_nonlocal.dump_edges">
+<span class="sig-name descname"><span class="pre">dump_edges</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">fname</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">''</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/brunelle_merger.html#Grim_Brunelle_nonlocal.dump_edges"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#brunelle_merger.Grim_Brunelle_nonlocal.dump_edges" title="Permalink to this definition"></a></dt>
+<dd><p>This function dumps everything into files of your choice.
+The tool for placement is put into the python function file
+It will also dump the tracker into a numpy memorymap .mm file</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>i</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.12)"><em>int</em></a>) – index i</p>
-</dd>
-<dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p>what index i used to be</p>
-</dd>
-<dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.12)">int</a></p>
+<dd class="field-odd"><p><strong>fname</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.12)"><em>str</em></a><em>, </em><em>optional</em>) – The filename you want to output to. If none is given it will dump to “dumped”, by default “”</p>
 </dd>
 </dl>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="brunelle_merger.Grim_Brunelle_nonlocal.run">
-<span class="sig-name descname"><span class="pre">run</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">target_bin_number</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">track</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/brunelle_merger.html#Grim_Brunelle_nonlocal.run"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#brunelle_merger.Grim_Brunelle_nonlocal.run" title="Permalink to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">run</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">target_bin_number</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/brunelle_merger.html#Grim_Brunelle_nonlocal.run"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#brunelle_merger.Grim_Brunelle_nonlocal.run" title="Permalink to this definition"></a></dt>
 <dd><p>runs the nonlocal binning</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>target_bin_number</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.12)"><em>int</em></a>) – the number of bins you want</p></li>
-<li><p><strong>track</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.12)"><em>bool</em></a><em>, </em><em>optional</em>) – Whether you would like to track the placement of where the original bins go in the nonlocal case, by default False</p></li>
-</ul>
+<dd class="field-odd"><p><strong>target_bin_number</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.12)"><em>int</em></a>) – the number of bins you want</p>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
 <dd class="field-even"><p>a numpy histogram of the new counts and bins</p>
@@ -292,150 +291,11 @@ Both bins and counts can be created using numpy.histogram()</p></li>
 </dl>
 </dd></dl>
 
-</dd></dl>
-
-<dl class="py class">
-<dt class="sig sig-object py" id="brunelle_merger.Grim_Brunelle_nonlocal_with_standard_model">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">brunelle_merger.</span></span><span class="sig-name descname"><span class="pre">Grim_Brunelle_nonlocal_with_standard_model</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">bins</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">counts</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">stats_check</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">subtraction_metric</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">weights</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/brunelle_merger.html#Grim_Brunelle_nonlocal_with_standard_model"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#brunelle_merger.Grim_Brunelle_nonlocal_with_standard_model" title="Permalink to this definition"></a></dt>
-<dd><p>Bases: <a class="reference internal" href="#brunelle_merger.Grim_Brunelle_nonlocal" title="brunelle_merger.Grim_Brunelle_nonlocal"><code class="xref py py-class docutils literal notranslate"><span class="pre">Grim_Brunelle_nonlocal</span></code></a></p>
-<p>This class will perform nonlocal bin merging by comparing each item to a “Standard Model” sample.
-The first set of counts that are input will be treated as the standard model sample.
-It merges bins nonlocally - so the bins no longer contain any physical meaning afterwards.
-Please only input 1 dimensional histograms! Should you need to operate upon a multidimensional histogram - please unroll them first.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>bins</strong> (<a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v1.26)"><em>numpy.ndarray</em></a>) – These are your bin edges</p></li>
-<li><p><strong>counts</strong> (<a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v1.26)"><em>numpy.ndarray</em></a>) – These are a set of bin counts put in as args. Place an unlimited number of them -  each one corresponds to a different hypothesis.
-The first array that is input will be the “Standard Model” sample.
-Both bins and counts can be created using numpy.histogram()</p></li>
-<li><p><strong>stats_check</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.12)"><em>bool</em></a><em>, </em><em>optional</em>) – If you want to insert a statistics check enable this option, by default True</p></li>
-<li><p><strong>subtraction_metric</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.12)"><em>bool</em></a><em>, </em><em>optional</em>) – If you want to use the metric that does subtraction. If false, it uses version of the metric that uses division, by default True</p></li>
-<li><p><strong>weights</strong> (<a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v1.26)"><em>numpy.ndarray</em></a><em>, </em><em>optional</em>) – A list of weights of the same length as the number of counts put in for each hypothesis. If None all weights are 1, by default None</p></li>
-</ul>
-</dd>
-<dt class="field-even">Raises<span class="colon">:</span></dt>
-<dd class="field-even"><ul class="simple">
-<li><p><a class="reference external" href="https://docs.python.org/3/library/exceptions.html#ValueError" title="(in Python v3.12)"><strong>ValueError</strong></a> – If your bin counts are not all the same length, raise an error</p></li>
-<li><p><a class="reference external" href="https://docs.python.org/3/library/exceptions.html#ValueError" title="(in Python v3.12)"><strong>ValueError</strong></a> – If len(counts) != len(bins) - 1 then raise an error</p></li>
-<li><p><a class="reference external" href="https://docs.python.org/3/library/exceptions.html#ValueError" title="(in Python v3.12)"><strong>ValueError</strong></a> – If len(weights) != len(counts) then raise an error</p></li>
-</ul>
-</dd>
-</dl>
 <dl class="py method">
-<dt class="sig sig-object py" id="brunelle_merger.Grim_Brunelle_nonlocal_with_standard_model.__MLM__">
-<span class="sig-name descname"><span class="pre">__MLM__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">b</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">bP</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/brunelle_merger.html#Grim_Brunelle_nonlocal_with_standard_model.__MLM__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#brunelle_merger.Grim_Brunelle_nonlocal_with_standard_model.__MLM__" title="Permalink to this definition"></a></dt>
-<dd><p>The distance function MLM</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>b</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.12)"><em>int</em></a>) – index 1 for the counts</p></li>
-<li><p><strong>bP</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.12)"><em>int</em></a>) – index 2 for the counts</p></li>
-</ul>
-</dd>
-<dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p>The distance metric between the two indices</p>
-</dd>
-<dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.12)">float</a></p>
-</dd>
-</dl>
-</dd></dl>
+<dt class="sig sig-object py" id="brunelle_merger.Grim_Brunelle_nonlocal.visualize_changes">
+<span class="sig-name descname"><span class="pre">visualize_changes</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">n</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">xlabel</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fname</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">''</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/brunelle_merger.html#Grim_Brunelle_nonlocal.visualize_changes"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#brunelle_merger.Grim_Brunelle_nonlocal.visualize_changes" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
 
-</dd></dl>
-
-<dl class="py class">
-<dt class="sig sig-object py" id="brunelle_merger.Grim_Brunelle_with_standard_model">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">brunelle_merger.</span></span><span class="sig-name descname"><span class="pre">Grim_Brunelle_with_standard_model</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">bins</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">counts</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">stats_check</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">subtraction_metric</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">weights</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/brunelle_merger.html#Grim_Brunelle_with_standard_model"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#brunelle_merger.Grim_Brunelle_with_standard_model" title="Permalink to this definition"></a></dt>
-<dd><p>Bases: <a class="reference internal" href="#brunelle_merger.Grim_Brunelle_merger" title="brunelle_merger.Grim_Brunelle_merger"><code class="xref py py-class docutils literal notranslate"><span class="pre">Grim_Brunelle_merger</span></code></a></p>
-<p>This class  merges bins locally (by outting adjacent bins together) by comparing each item to a “Standard Model” sample.
-The first set of counts that are input will be treated as the standard model sample.
-Please only input 1 dimensional histograms! Should you need to operate upon a multidimensional histogram - please unroll them first.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>bins</strong> (<a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v1.26)"><em>numpy.ndarray</em></a>) – These are your bin edges</p></li>
-<li><p><strong>counts</strong> (<a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v1.26)"><em>numpy.ndarray</em></a>) – These are a set of bin counts put in as args. Place an unlimited number of them -  each one corresponds to a different hypothesis.
-The first array that is input will be the “Standard Model” sample.
-Both bins and counts can be created using numpy.histogram()</p></li>
-<li><p><strong>stats_check</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.12)"><em>bool</em></a><em>, </em><em>optional</em>) – If you want to insert a statistics check enable this option, by default True</p></li>
-<li><p><strong>subtraction_metric</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.12)"><em>bool</em></a><em>, </em><em>optional</em>) – If you want to use the metric that does subtraction. If false, it uses version of the metric that uses division, by default True</p></li>
-<li><p><strong>weights</strong> (<a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v1.26)"><em>numpy.ndarray</em></a><em>, </em><em>optional</em>) – A list of weights of the same length as the number of counts put in for each hypothesis. If None all weights are 1, by default None</p></li>
-</ul>
-</dd>
-<dt class="field-even">Raises<span class="colon">:</span></dt>
-<dd class="field-even"><ul class="simple">
-<li><p><a class="reference external" href="https://docs.python.org/3/library/exceptions.html#ValueError" title="(in Python v3.12)"><strong>ValueError</strong></a> – If your bin counts are not all the same length, raise an error</p></li>
-<li><p><a class="reference external" href="https://docs.python.org/3/library/exceptions.html#ValueError" title="(in Python v3.12)"><strong>ValueError</strong></a> – If len(counts) != len(bins) - 1 then raise an error</p></li>
-<li><p><a class="reference external" href="https://docs.python.org/3/library/exceptions.html#ValueError" title="(in Python v3.12)"><strong>ValueError</strong></a> – If len(weights) != len(counts) then raise an error</p></li>
-</ul>
-</dd>
-</dl>
-<dl class="py method">
-<dt class="sig sig-object py" id="brunelle_merger.Grim_Brunelle_with_standard_model.__MLM__">
-<span class="sig-name descname"><span class="pre">__MLM__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">b</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">bP</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/brunelle_merger.html#Grim_Brunelle_with_standard_model.__MLM__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#brunelle_merger.Grim_Brunelle_with_standard_model.__MLM__" title="Permalink to this definition"></a></dt>
-<dd><p>The distance function MLM - edited to perform only comparisons with the “Standard Model” sample.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>b</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.12)"><em>int</em></a>) – index 1 for the counts</p></li>
-<li><p><strong>bP</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.12)"><em>int</em></a>) – index 2 for the counts</p></li>
-</ul>
-</dd>
-<dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p>The distance metric between the two indices</p>
-</dd>
-<dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.12)">float</a></p>
-</dd>
-</dl>
-</dd></dl>
-
-</dd></dl>
-
-<dl class="py function">
-<dt class="sig sig-object py" id="brunelle_merger.merge_bins">
-<span class="sig-prename descclassname"><span class="pre">brunelle_merger.</span></span><span class="sig-name descname"><span class="pre">merge_bins</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">target</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">bins</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">counts</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/brunelle_merger.html#merge_bins"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#brunelle_merger.merge_bins" title="Permalink to this definition"></a></dt>
-<dd><p>Merges a set of bins that are given based off of the counts provided
-Eliminates any bin with a corresponding count that is less than the target
-Useful to do merge_bins(*np.histogram(data), …)</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>counts</strong> (<a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v1.26)"><em>numpy.ndarray</em></a>) – The counts of a histogram</p></li>
-<li><p><strong>bins</strong> (<a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v1.26)"><em>numpy.ndarray</em></a>) – The bins of a histogram</p></li>
-<li><p><strong>target</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.12)"><em>int</em></a><em>, </em><em>optional</em>) – The target value to achieve - any counts below this will be merged, by default 0</p></li>
-<li><p><strong>ab_val</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.12)"><em>bool</em></a><em>, </em><em>optional</em>) – If on, the target will consider the absolute value of the counts, not the actual value, by default True</p></li>
-<li><p><strong>drop_first</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.12)"><em>bool</em></a><em>, </em><em>optional</em>) – If on, the function will not automatically include the first bin edge, by default False</p></li>
-</ul>
-</dd>
-<dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p>A np.histogram object with the bins and counts merged</p>
-</dd>
-<dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>Tuple(<a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v1.26)">numpy.ndarray</a>, <a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v1.26)">numpy.ndarray</a>)</p>
-</dd>
-<dt class="field-even">Raises<span class="colon">:</span></dt>
-<dd class="field-even"><p><a class="reference external" href="https://docs.python.org/3/library/exceptions.html#ValueError" title="(in Python v3.12)"><strong>ValueError</strong></a> – If the bins and counts are not sized properly the function will fail</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py function">
-<dt class="sig sig-object py" id="brunelle_merger.print_msg_box">
-<span class="sig-prename descclassname"><span class="pre">brunelle_merger.</span></span><span class="sig-name descname"><span class="pre">print_msg_box</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">msg</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">indent</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">width</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">title</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">''</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/brunelle_merger.html#print_msg_box"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#brunelle_merger.print_msg_box" title="Permalink to this definition"></a></dt>
-<dd><p>returns message-box with optional title.
-Ripped from <a class="reference external" href="https://stackoverflow.com/questions/39969064/how-to-print-a-message-box-in-python">https://stackoverflow.com/questions/39969064/how-to-print-a-message-box-in-python</a></p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>msg</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.12)"><em>str</em></a>) – The message to use</p></li>
-<li><p><strong>indent</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.12)"><em>int</em></a><em>, </em><em>optional</em>) – indent size, by default 1</p></li>
-<li><p><strong>width</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.12)"><em>int</em></a><em>, </em><em>optional</em>) – box width, by default 0</p></li>
-<li><p><strong>title</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.12)"><em>str</em></a><em>, </em><em>optional</em>) – box title, by default “”</p></li>
-</ul>
-</dd>
-</dl>
 </dd></dl>
 
 </section>

@@ -388,28 +388,50 @@ if __name__ == "__main__": #TEST DATA!!
     #             run_test(stat_check, n_bins, subtraction_metric)
     #             print()
     
-    nonlocal_bins = [None]*5
-    nonlocal_counts = [None]*5
-    bins_wanted=5
+    # nonlocal_bins = [None]*5
+    # nonlocal_counts = [None]*5
+    # bins_wanted=5
     
-    for i in range(len(branches)):
-        # if i == 1: break
-        x = counts_sm[i]
-        xp = counts_ps[i]
+    # for i in range(len(branches)):
+    #     # if i == 1: break
+    #     x = counts_sm[i]
+    #     xp = counts_ps[i]
         
-        dim_bins = bm.Grim_Brunelle_nonlocal(edges[i], x.copy(), xp.copy(), stats_check=False, subtraction_metric=True)
-        start3 = time.time()
-        nonlocal_counts[i], temp_bins = dim_bins.run(bins_wanted)
-        end3 = time.time()
-        # tracked_points = dim_bins.tracker
-        nonlocal_bins[i] = temp_bins.copy()
-        print("Nonlocal:", end3 - start3)
+    #     dim_bins = bm.Grim_Brunelle_nonlocal(edges[i], x.copy(), xp.copy(), stats_check=False, subtraction_metric=True, SM_version=True)
+    #     start3 = time.time()
+    #     nonlocal_counts[i], temp_bins = dim_bins.run()
+    #     end3 = time.time()
+    #     # tracked_points = dim_bins.tracker
+    #     nonlocal_bins[i] = temp_bins.copy()
+    #     print("Nonlocal:", end3 - start3)
         
-        dim_bins.visualize_changes(20, xlabel=branches[i], fname="clustering_new_"+branches[i])
-        dim_bins.dump_edges(branches[i])
+    #     dim_bins.visualize_changes(2, xlabel=branches[i], fname="clustering_new_"+branches[i])
+    #     dim_bins.dump_edges(branches[i])
         
         # print(tracked_points[-1])
         # for i in tracked_points[-1]:
             # print("Bins contained in bin", i , ":", dim_bins.__trace__(i, len(tracked_points) - 1) )
     
+    ################################ ANALYTIC ############################
+    
+    files = (
+        "test_data/out_g1.txt",
+        "test_data/out_g4.txt",
+        "test_data/out_g1g4.txt"
+    )
+    
+    with open(files[0] + ".pkl", 'rb') as p:
+        shape, edges, centers = pickle.load(p)
+    
+    
+    data_g1 = np.memmap(files[0] + ".mm", mode='r', shape=shape, dtype=np.float32)
+    data_g4 = np.memmap(files[1] + ".mm", mode='r', shape=shape, dtype=np.float32)
+    data_g1g4 = np.memmap(files[2] + ".mm", mode='r', shape=shape, dtype=np.float32)
+    
+    # print(data_g1, data_g4, data_g1g4, sep='\n')
+    
+    dim_bins = bm.Grim_Brunelle_nonlocal(edges, data_g1, data_g4, data_g1g4 - data_g1 - data_g4, stats_check=False, SM_version=True)
+    nonlocal_counts = dim_bins.run()
+    dim_bins.dump_edges("Analytic")
+    dim_bins.visualize_changes(10, fname="Analytic")
     os.system('mv *.png plots/')
