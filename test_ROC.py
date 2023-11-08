@@ -10,14 +10,20 @@ if __name__ == '__main__': #TEST ROC CURVES!!!
     y2 = np.sin(x)**2
     y3 = np.cos(x)**2
     
-    ROC_maker = ROC.SUPER_ROC_Curves()
+    # ROC_maker = ROC.SUPER_ROC_Curves()
     # ROC_maker.add_ROC(y1.copy(), y2.copy(), "sin(x)^2 vs sin(x)")
     # ROC_maker.add_ROC(y1.copy(), y3.copy(), "sin(x) vs cos(x)^2")
-    ROC_maker.add_ROC(y2.copy(), y3.copy(), "sin(x)^2 vs cos(x)^2")
-    ROC_maker.plot_scores()
-    ROC_maker.plot_ROCs()
+    x,y = ROC.length_scale_ROC(y2.copy(), y1.copy())
+    plt.plot(x,y)
+    print()
+    x,y = ROC.length_scale_ROC(y3.copy(), -1*y2.copy())
+    plt.plot(x,y)
+    print()
+    x,y = ROC.length_scale_ROC(y3.copy(), y2.copy())
+    plt.plot(x,y)
+    plt.show()
     
-    x,y,s = ROC.ROC_curve(y3.copy(), y2.copy())
+    x,y,s = ROC.ROC_curve(y2.copy(), y3.copy())
     plt.plot(x,y, label='s')
     plt.legend()
     plt.show()

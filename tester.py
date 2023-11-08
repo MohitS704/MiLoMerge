@@ -302,7 +302,7 @@ if __name__ == "__main__": #TEST DATA!!
     ranges = [
         None,
         None,
-        [-3.14, 3.14],
+        [-np.pi, np.pi],
         [-1,1],
         [-1,1]
     ]
@@ -408,9 +408,6 @@ if __name__ == "__main__": #TEST DATA!!
     #     dim_bins.visualize_changes(2, xlabel=branches[i], fname="clustering_new_"+branches[i])
     #     dim_bins.dump_edges(branches[i])
         
-        # print(tracked_points[-1])
-        # for i in tracked_points[-1]:
-            # print("Bins contained in bin", i , ":", dim_bins.__trace__(i, len(tracked_points) - 1) )
     
     ################################ ANALYTIC ############################
     
@@ -430,8 +427,14 @@ if __name__ == "__main__": #TEST DATA!!
     
     # print(data_g1, data_g4, data_g1g4, sep='\n')
     
+    dim_bins = bm.Grim_Brunelle_nonlocal(edges, data_g1, data_g1g4 - data_g1 - data_g4, stats_check=False, SM_version=True)
+    nonlocal_counts = dim_bins.run()
+    dim_bins.dump_edges("Analytic_pairwise_INT")
+    dim_bins.visualize_changes(10, fname="Analytic_pairwise_INT")
+    
     dim_bins = bm.Grim_Brunelle_nonlocal(edges, data_g1, data_g4, data_g1g4 - data_g1 - data_g4, stats_check=False, SM_version=True)
     nonlocal_counts = dim_bins.run()
     dim_bins.dump_edges("Analytic")
     dim_bins.visualize_changes(10, fname="Analytic")
+    
     os.system('mv *.png plots/')

@@ -105,6 +105,7 @@ class Grim_Brunelle_merger(object):#Professor Nathan Brunelle!
         """Resets the state
         """
         self.counts_to_merge = self.merged_counts.copy()
+        self.counts_to_merge = self.merged_counts.astype(float)
         self.local_edges = self.post_stats_merge_bins.copy()
         self.n_items = len(self.merged_counts[0])
     
@@ -438,7 +439,7 @@ class Grim_Brunelle_nonlocal(Grim_Brunelle_merger):
         func += ["mapped_val = mapping[N-1][nonzero]"]
         func += ["if mapped_val < 0:"]
         func += ["\traise ValueError('number of bins: ' + str(N) + ' was not calculated ')"]
-        func += ["return mapped_val[0]"]
+        func += ["return nonzero_rolled, mapped_val[0]"]
         
         func = "\n\t".join(func)
         func = "\n\t" + func
@@ -488,11 +489,11 @@ class Grim_Brunelle_nonlocal(Grim_Brunelle_merger):
         
         merged_counts[:,k] = self.counts_to_merge[:,i] + self.counts_to_merge[:,j] #shove everything into the final bin
         
-        for wipe in range(k, len(self.scores)): 
+        # for wipe in range(k, len(self.scores)): #ALSO WIPES THE OLD ROW!
             #wipe away rows and columns that are no longer being considered
             #(i.e. phasespace moves down from 5 bins to 4, wipe scores from old bin 5)
-            self.scores[wipe] = np.inf
-            self.scores[:,wipe] = np.inf
+        self.scores[k:] = np.inf
+        self.scores[:,k:] = np.inf
             
         self.n_items -= 1
         
@@ -584,7 +585,7 @@ class Grim_Brunelle_nonlocal(Grim_Brunelle_merger):
                 for index in indices:
                     plt.scatter(centers[index], self.merged_counts[0][index], color=c, marker='.', s=25)
                     plt.scatter(centers[index], self.merged_counts[1][index], color=c, marker='x', s=25)
-                    plt.scatter(centers[index], self.merged_counts[2][index], color=c, marker='1', s=25)
+                    # plt.scatter(centers[index], self.merged_counts[2][index], color=c, marker='1', s=25)
             
             if xlabel == None:
                 "Distribution Clustering"
