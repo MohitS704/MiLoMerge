@@ -1,13 +1,38 @@
 import numpy as np
-import matplotlib.pyplot as plt
-import matplotlib.patches
-import warnings
-import mplhep as hep
 
 
-def length_scale_ROC(sample1, sample2):
-    sample1 = np.array(sample1, dtype=float)
-    sample2 = np.array(sample2, dtype=float)
+def length_scale_ROC(sample1, target_integral1, sample2, target_integral2):
+    """This is a ROC curve that uses the length to calculate things
+
+    Parameters
+    ----------
+    sample1 : numpy.ndarray
+        A numpy array of the histogram bin counts for your first sample
+    target_integral1 : float
+        The desired integral of your sample
+        
+        _EXAMPLE_: un-merged interference has an absolute area of 20, but the merged interference has an absolute area of 10.
+        Input 20 as target_integral1
+    sample2 : numpy.ndarray
+        A numpy array of the histogram bin counts for your second sample
+    target_integral2 : float
+        The desired integral of your sample
+
+    Returns
+    -------
+    tuple[numpy.ndarray, numpy.ndarray, float, float]
+        The TPR and FPR arrays (to be treated as x and y),
+        as well as the length score and the area score of the ROC curve.
+        
+        NOTE: for the positive case this area is the area __below__ the curve! 
+
+    Raises
+    ------
+    ValueError
+        At least one of the samples should be positive definite
+    """
+    sample1 = np.array(sample1, dtype=float).ravel()
+    sample2 = np.array(sample2, dtype=float).ravel()
     
     if np.any(sample2 < 0):
         if np.any(sample1 < 0):
@@ -15,25 +40,18 @@ def length_scale_ROC(sample1, sample2):
         
         print("Swapping samples 1 and 2")
         sample1, sample2 = sample2.copy(), sample1.copy() #sample1 should be the negative one by construction
+        target_integral1, target_integral2 = target_integral2, target_integral1
+    
+    print("NORMS:", np.abs(sample1).sum()/target_integral1, np.abs(sample2).sum()/target_integral2)
     
     hypo1_counts = sample1.copy()/np.abs(sample1).sum()
     hypo2_counts = sample2.copy()/np.abs(sample2).sum()
     
-    # ratio = hypo2_counts/hypo1_counts
-    
+    print("NORMS:", np.abs(hypo1_counts).sum(), np.abs(hypo2_counts).sum())
+        
     py_ratio = hypo2_counts/hypo1_counts
-    # py_ratio = py_ratio[np.isfinite(py_ratio)]
-    # py_ratio = list(enumerate(py_ratio))
-    
-    # py_ratio = sorted(py_ratio, key=lambda x: x[1])
-    # ratios = np.array(py_ratio)[:,0].astype(int) #gets the bin indices only for the ordered ratio pairs
     
     ratios = np.argsort(py_ratio)[::-1]
-    
-    # plt.plot(py_ratio[ratios])
-    # plt.plot(np.sort(hypo2_counts/hypo1_counts))
-    # plt.title('og ratio')
-    # plt.show()
     
     
     length = len(ratios) + 1 #the extra value allows for the addition of the final end point
@@ -64,21 +82,6 @@ def length_scale_ROC(sample1, sample2):
     TPR[~np.isfinite(TPR)] = 0
     FPR[~np.isfinite(FPR)] = 0
     
-    
-    turning_point = np.argmin(TPR)
-    
-    TPR_bot, TPR_top = TPR[turning_point:], TPR[:turning_point]
-    FPR_bot, FPR_top = FPR[turning_point:], FPR[:turning_point]
-    
-    area_below_bottom = abs(np.trapz(FPR_bot, TPR_bot)) #abs because trapz is negative when going backwards but we want the actual area
-    area_below_top = abs(np.trapz(FPR_top, TPR_top))
-    
-    area_inside = area_below_top - area_below_bottom
-    
-    length_arr = np.sqrt(np.diff(TPR)**2 + np.diff(FPR)**2) #vectorized distance formula
-    
-    length = length_arr.sum()
-    
     y = abs(np.min(TPR))
     x_plus_y = abs(np.max(TPR))
     x = abs(x_plus_y - y)
@@ -87,17 +90,28 @@ def length_scale_ROC(sample1, sample2):
     xBar_plus_yBar = abs(np.max(FPR))
     xBar = abs(xBar_plus_yBar - yBar)
     
-    maximum_length = x + y + yBar + xBar
+    maximum_length = x + y + yBar + xBar #max length should be the same as the original sample given that the overall integral should be preserved
     
-    print("length = {:.02f}".format(length))
-    print("max length: {:.02f} = {:.02f} + {:.02f} + {:.02f} + {:.02f}".format(maximum_length, x, y, yBar, xBar))
+    norm_fac = (np.abs(sample1).sum()/target_integral1) #scales by the total absolute integral of the original sample
+    TPR *= norm_fac
+    
+    turning_point = np.argmin(TPR)
+    
+    TPR_bot, TPR_top = TPR[turning_point:], TPR[:turning_point]
+    FPR_bot, FPR_top = FPR[turning_point:], FPR[:turning_point]
+    
+    area_below_bottom = abs(np.trapz(FPR_bot, TPR_bot)) #abs because trapz is negative when going backwards but we want the actual area
+    area_below_top = abs(np.trapz(FPR_top, TPR_top)) #another abs because why not! extra protection
+    
+    area_inside = area_below_top - area_below_bottom
+    
+    length_arr = np.sqrt(np.diff(TPR)**2 + np.diff(FPR)**2) #vectorized distance formula
+    
+    length = length_arr.sum()
     
     score = length/maximum_length
-    
-    
-    
-    print("Score = {:.3f}".format(score))
-    
+    score *= length
+        
     return TPR, FPR, score, area_inside
 
 def ROC_curve(sample1, sample2):
@@ -109,12 +123,6 @@ def ROC_curve(sample1, sample2):
         The first data sample for your attribute. This is your "True" data
     sample2 : numpy.ndarray
         The second data sample for your attribute. This if your "False" data
-    bins : int or numpy.ndarray, optional
-        The number of bins for the ROC calculation. Can also be given a list of bins., by default 100
-    lower : float
-        The lower end of your sample range
-    upper : float
-        The upper end of your sample range
     
 
     Returns

@@ -250,65 +250,6 @@ class Grim_Brunelle_merger(object):#Professor Nathan Brunelle!
             self.n_items -= 1
             
         return self.counts_to_merge, self.local_edges
-    
-    def run_local_faster(self, target_bin_number):
-        """attempts to run faster - needs to be debugged. WIP
-
-        Parameters
-        ----------
-        target_bin_number : int
-            the number of bins you want
-
-        Returns
-        -------
-        Tuple(numpy.ndarray, numpy.ndarray)
-            a numpy histogram of the new counts and bins
-        """
-        
-        things_to_recalculate = set(list(range(1, self.n_items - 1)))
-        combinations = {}
-        scores = {}
-        while self.n_items > target_bin_number:
-            # print(things_to_recalculate)
-            # print(scores)
-            # print(combinations)
-            
-            temp_counts = np.zeros(shape=(self.counts_to_merge.shape[0], self.counts_to_merge.shape[1] - 1), dtype=float)
-            for i in things_to_recalculate: #don't merge edge bins/counts!
-                if i == 1:
-                    score = self.__MLM__(1, 0) #try merging counts 1 with count 0 (backwards)
-                    combinations[0] = (1, 0)
-                    scores[0] = score
-                score = self.__MLM__(i, i+1)
-                combinations[i] = (i, i+1)
-                scores[i] = score
-            
-            item_to_delete = min(scores, key=scores.get)
-            i1, i2 = combinations[item_to_delete]
-            
-            # print(i1, i2, self.n_items, '\n')
-            if i1 == self.n_items - 2:
-                things_to_recalculate = set([i-1])
-            else:
-                things_to_recalculate = set((i1-1, i1))
-            # print(scores)
-            # print(combinations)
-            for index in scores.keys():
-                if index > i1:
-                    scores[index-1] = scores[index]
-                    scores[index] = np.inf
-                    
-                    old_i1, old_i2 = combinations[index]
-                    combinations[index-1] = (old_i1 - 1, old_i2 - 1)
-                    combinations[index] = (np.nan, np.nan)
-            
-            temp_counts, temp_bins = self.__merge__(i1, i2)
-            
-            self.counts_to_merge, self.local_edges = temp_counts, temp_bins
-            
-            self.n_items -= 1
-            
-        return self.counts_to_merge, self.local_edges
 
 class Grim_Brunelle_nonlocal(Grim_Brunelle_merger):
     def __init__(self, bins, *counts, stats_check=True, subtraction_metric=True, weights=None, SM_version=False) -> None:
@@ -388,14 +329,38 @@ class Grim_Brunelle_nonlocal(Grim_Brunelle_merger):
         np.set_printoptions(threshold=sys.maxsize)
         edges_str = np.array2string(self.physical_bins, separator=',', formatter={'float_kind':lambda x: "%.3f" % x}, max_line_width=np.inf)
         
-        docstr = '''"""**place_entry** will place a set of observables into a given bin index from a previous optimization
+        docstr_nD = '''"""**place_entry** will place a set of observables into a given bin index from a previous optimization
 
 	Parameters
 	----------
 	N : int
 		The number of bins that you want total
 	observables : numpy.ndarray
-		A _1-d_ array of observables that you want to to place
+		A __1-d__ array of observables that you want to to place
+	verbose : bool, optional
+		Set to True if you want to print verbose options, by default False
+
+	Returns
+	-------
+	int
+		The bin index in range [0, N) that the observables will be placed at
+
+	Raises
+	------
+	ValueError
+		len(observables) must be equal to the shape of bin edges
+	ValueError
+		You asked for fewer bins than is possible!
+	"""'''
+
+        docstr_1D = '''"""**place_entry** will place a set of observables into a given bin index from a previous optimization
+
+	Parameters
+	----------
+	N : int
+		The number of bins that you want total
+	observables : float
+		An observable quantity that you are placing
 	verbose : bool, optional
 		Set to True if you want to print verbose options, by default False
 
@@ -414,8 +379,15 @@ class Grim_Brunelle_nonlocal(Grim_Brunelle_merger):
         
         
         code = ["import numpy as np"]
+        code += ["import numba as nb"]
+        code += ["mapping = np.memmap('"+fname+ ".mm', dtype=np.int32, mode='r', shape=" + str(self.tracker.shape) + ")"]
         code += ["def place_entry(N, observables, verbose=False):"]
         code = "\n".join(code)
+        
+        if self.n_observables > 1:
+            docstr = docstr_nD
+        else:
+            docstr = docstr_1D
         
         func = [docstr]
         func += ["if len(observables) != {:.0f}:".format(self.n_observables)]
@@ -423,23 +395,25 @@ class Grim_Brunelle_nonlocal(Grim_Brunelle_merger):
         func += ["observables = np.array(observables, dtype=np.float64)"]
         func += ["edges=np.array("+edges_str + ")"]
         if self.n_observables > 1:
-            func += ["observables = observables.reshape(1, edges.shape[0])"]
-            func += ["counts, *_ = np.histogramdd(observables, edges)"]
+            func += ["nonzero_rolled = np.zeros({:.0f}, dtype=np.uint8)".format(self.n_observables)]
+            func += ["for i in nb.prange(5):"]
+            func += ["\tnonzero_rolled[i] = np.searchsorted(edges[i], observables[i])"]
+            func += ["nonzero_rolled -= 1"]
         else:
-            func += ["counts, *_ = np.histogram(observables, edges)"]
-        func += ["nonzero_rolled = np.fromiter(map( lambda x: x[0], np.nonzero(counts)), dtype=np.uint64)"]
+            func += ["nonzero_rolled = np.searchsorted(edges, observables) - 1"]
         func += ["if verbose:"]
         func += ["\tprint('original index of:', nonzero_rolled)"]
         func += ["\tprint('This places your point in the range:')"]
-        func += ["\tfor i in range(edges.shape[0]):"]
+        func += ["\tfor i in nb.prange(edges.shape[0]):"]
         func += ["\t\tprint('[', edges[i][nonzero_rolled[i]], ',', edges[i][int(nonzero_rolled[i]+1)], ']')"]
-        func += ["counts = counts.ravel()"]
-        func += ["nonzero = np.nonzero(counts)"]
-        func += ["mapping = np.memmap('"+fname+ ".mm', dtype=np.int32, mode='r', shape=" + str(self.tracker.shape) + ")"]
+        if self.n_observables > 1:
+            func += ["nonzero = (np.power({:.0f}, np.arange({:.0f},-1,-1, np.int16))*nonzero_rolled).sum()".format(self.physical_bins.shape[1] - 1, self.n_observables - 1)]
+        else:
+            func += ["nonzero = nonzero_rolled"]
         func += ["mapped_val = mapping[N-1][nonzero]"]
         func += ["if mapped_val < 0:"]
-        func += ["\traise ValueError('number of bins: ' + str(N) + ' was not calculated ')"]
-        func += ["return nonzero_rolled, mapped_val[0]"]
+        func += ["\traise ValueError('Cannot have fewer than 0 bins!')"]
+        func += ["return nonzero_rolled, mapped_val"]
         
         func = "\n\t".join(func)
         func = "\n\t" + func

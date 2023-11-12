@@ -112,49 +112,6 @@ def merge_bins(target, bins, *counts, **kwargs):
         # print()
     return np.vstack(new_counts), np.array(new_bins)
 
-
-# def unroll(rolled_counts, rolled_bins, bkg=False):
-#     one_D_counts = np.array(rolled_counts).copy().ravel()
-#     one_D_bins = np.arange(len(one_D_counts) + 1)
-#     filler = np.sum(one_D_counts)/(10*len(one_D_bins))
-#     if bkg:
-#         one_D_counts = np.maximum(one_D_counts, filler)
-#     else:
-#         one_D_counts = np.maximum(one_D_counts,0)
-#     return one_D_counts, one_D_bins
-    # if len(self.rolled_counts.shape) == 1:
-    #     return self.rolled_counts, self.rolled_bins
-    # counts = self.rolled_counts.copy()
-    # integral = np.sum(counts)
-    # super_bin_count = 1
-    # for b in self.rolled_bins:
-    #     super_bin_count *= len(b) - 1
-    
-    # filler = integral/(10*super_bin_count)
-    # one_D_counts = np.zeros(super_bin_count)
-    # # print("size of output:", len(one_D_counts))
-    # _, bins = np.histogram([], super_bin_count, [0, super_bin_count])
-    
-    # indk = 0
-    # for index, bin_count in np.ndenumerate(counts):
-    #     fillable_value = bin_count
-    #     if bin_count <= 0 and bkg:
-    #         fillable_value = filler
-    #     elif bin_count < 0 and not bkg:
-    #         fillable_value = 0
-        
-    #     one_D_counts[indk] = fillable_value
-    #     self.unrolled_to_rolled_converter[indk] = index
-    #     indk += 1
-    
-    # self.unrolled_counts = one_D_counts.copy()
-    # self.unrolled_bins = bins.copy()
-    
-    # return one_D_counts, bins
-    
-
-
-
 def Unroll_ND_histogram(counts, *bins, bkg=False):
     counts = np.array(counts)
     integral = np.sum(counts)
