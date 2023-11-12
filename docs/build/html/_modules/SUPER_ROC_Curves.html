@@ -70,15 +70,40 @@
              
   <h1>Source code for SUPER_ROC_Curves</h1><div class="highlight"><pre>
 <span></span><span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
-<span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="k">as</span> <span class="nn">plt</span>
-<span class="kn">import</span> <span class="nn">matplotlib.patches</span>
-<span class="kn">import</span> <span class="nn">warnings</span>
-<span class="kn">import</span> <span class="nn">mplhep</span> <span class="k">as</span> <span class="nn">hep</span>
 
 
-<div class="viewcode-block" id="length_scale_ROC"><a class="viewcode-back" href="../SUPER_ROC_Curves.html#SUPER_ROC_Curves.length_scale_ROC">[docs]</a><span class="k">def</span> <span class="nf">length_scale_ROC</span><span class="p">(</span><span class="n">sample1</span><span class="p">,</span> <span class="n">sample2</span><span class="p">):</span>
-    <span class="n">sample1</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">sample1</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">)</span>
-    <span class="n">sample2</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">sample2</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">)</span>
+<div class="viewcode-block" id="length_scale_ROC"><a class="viewcode-back" href="../SUPER_ROC_Curves.html#SUPER_ROC_Curves.length_scale_ROC">[docs]</a><span class="k">def</span> <span class="nf">length_scale_ROC</span><span class="p">(</span><span class="n">sample1</span><span class="p">,</span> <span class="n">target_integral1</span><span class="p">,</span> <span class="n">sample2</span><span class="p">,</span> <span class="n">target_integral2</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;This is a ROC curve that uses the length to calculate things</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    sample1 : numpy.ndarray</span>
+<span class="sd">        A numpy array of the histogram bin counts for your first sample</span>
+<span class="sd">    target_integral1 : float</span>
+<span class="sd">        The desired integral of your sample</span>
+<span class="sd">        </span>
+<span class="sd">        _EXAMPLE_: un-merged interference has an absolute area of 20, but the merged interference has an absolute area of 10.</span>
+<span class="sd">        Input 20 as target_integral1</span>
+<span class="sd">    sample2 : numpy.ndarray</span>
+<span class="sd">        A numpy array of the histogram bin counts for your second sample</span>
+<span class="sd">    target_integral2 : float</span>
+<span class="sd">        The desired integral of your sample</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    tuple[numpy.ndarray, numpy.ndarray, float, float]</span>
+<span class="sd">        The TPR and FPR arrays (to be treated as x and y),</span>
+<span class="sd">        as well as the length score and the area score of the ROC curve.</span>
+<span class="sd">        </span>
+<span class="sd">        NOTE: for the positive case this area is the area __below__ the curve! </span>
+
+<span class="sd">    Raises</span>
+<span class="sd">    ------</span>
+<span class="sd">    ValueError</span>
+<span class="sd">        At least one of the samples should be positive definite</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">sample1</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">sample1</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">)</span><span class="o">.</span><span class="n">ravel</span><span class="p">()</span>
+    <span class="n">sample2</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">sample2</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">)</span><span class="o">.</span><span class="n">ravel</span><span class="p">()</span>
     
     <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">any</span><span class="p">(</span><span class="n">sample2</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">):</span>
         <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">any</span><span class="p">(</span><span class="n">sample1</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">):</span>
@@ -86,25 +111,18 @@
         
         <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Swapping samples 1 and 2&quot;</span><span class="p">)</span>
         <span class="n">sample1</span><span class="p">,</span> <span class="n">sample2</span> <span class="o">=</span> <span class="n">sample2</span><span class="o">.</span><span class="n">copy</span><span class="p">(),</span> <span class="n">sample1</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span> <span class="c1">#sample1 should be the negative one by construction</span>
+        <span class="n">target_integral1</span><span class="p">,</span> <span class="n">target_integral2</span> <span class="o">=</span> <span class="n">target_integral2</span><span class="p">,</span> <span class="n">target_integral1</span>
+    
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;NORMS:&quot;</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">sample1</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span><span class="o">/</span><span class="n">target_integral1</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">sample2</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span><span class="o">/</span><span class="n">target_integral2</span><span class="p">)</span>
     
     <span class="n">hypo1_counts</span> <span class="o">=</span> <span class="n">sample1</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span><span class="o">/</span><span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">sample1</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
     <span class="n">hypo2_counts</span> <span class="o">=</span> <span class="n">sample2</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span><span class="o">/</span><span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">sample2</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
     
-    <span class="c1"># ratio = hypo2_counts/hypo1_counts</span>
-    
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;NORMS:&quot;</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">hypo1_counts</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">(),</span> <span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">hypo2_counts</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">())</span>
+        
     <span class="n">py_ratio</span> <span class="o">=</span> <span class="n">hypo2_counts</span><span class="o">/</span><span class="n">hypo1_counts</span>
-    <span class="c1"># py_ratio = py_ratio[np.isfinite(py_ratio)]</span>
-    <span class="c1"># py_ratio = list(enumerate(py_ratio))</span>
-    
-    <span class="c1"># py_ratio = sorted(py_ratio, key=lambda x: x[1])</span>
-    <span class="c1"># ratios = np.array(py_ratio)[:,0].astype(int) #gets the bin indices only for the ordered ratio pairs</span>
     
     <span class="n">ratios</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">argsort</span><span class="p">(</span><span class="n">py_ratio</span><span class="p">)[::</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
-    
-    <span class="c1"># plt.plot(py_ratio[ratios])</span>
-    <span class="c1"># plt.plot(np.sort(hypo2_counts/hypo1_counts))</span>
-    <span class="c1"># plt.title(&#39;og ratio&#39;)</span>
-    <span class="c1"># plt.show()</span>
     
     
     <span class="n">length</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">ratios</span><span class="p">)</span> <span class="o">+</span> <span class="mi">1</span> <span class="c1">#the extra value allows for the addition of the final end point</span>
@@ -135,21 +153,6 @@
     <span class="n">TPR</span><span class="p">[</span><span class="o">~</span><span class="n">np</span><span class="o">.</span><span class="n">isfinite</span><span class="p">(</span><span class="n">TPR</span><span class="p">)]</span> <span class="o">=</span> <span class="mi">0</span>
     <span class="n">FPR</span><span class="p">[</span><span class="o">~</span><span class="n">np</span><span class="o">.</span><span class="n">isfinite</span><span class="p">(</span><span class="n">FPR</span><span class="p">)]</span> <span class="o">=</span> <span class="mi">0</span>
     
-    
-    <span class="n">turning_point</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">argmin</span><span class="p">(</span><span class="n">TPR</span><span class="p">)</span>
-    
-    <span class="n">TPR_bot</span><span class="p">,</span> <span class="n">TPR_top</span> <span class="o">=</span> <span class="n">TPR</span><span class="p">[</span><span class="n">turning_point</span><span class="p">:],</span> <span class="n">TPR</span><span class="p">[:</span><span class="n">turning_point</span><span class="p">]</span>
-    <span class="n">FPR_bot</span><span class="p">,</span> <span class="n">FPR_top</span> <span class="o">=</span> <span class="n">FPR</span><span class="p">[</span><span class="n">turning_point</span><span class="p">:],</span> <span class="n">FPR</span><span class="p">[:</span><span class="n">turning_point</span><span class="p">]</span>
-    
-    <span class="n">area_below_bottom</span> <span class="o">=</span> <span class="nb">abs</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">trapz</span><span class="p">(</span><span class="n">FPR_bot</span><span class="p">,</span> <span class="n">TPR_bot</span><span class="p">))</span> <span class="c1">#abs because trapz is negative when going backwards but we want the actual area</span>
-    <span class="n">area_below_top</span> <span class="o">=</span> <span class="nb">abs</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">trapz</span><span class="p">(</span><span class="n">FPR_top</span><span class="p">,</span> <span class="n">TPR_top</span><span class="p">))</span>
-    
-    <span class="n">area_inside</span> <span class="o">=</span> <span class="n">area_below_top</span> <span class="o">-</span> <span class="n">area_below_bottom</span>
-    
-    <span class="n">length_arr</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">diff</span><span class="p">(</span><span class="n">TPR</span><span class="p">)</span><span class="o">**</span><span class="mi">2</span> <span class="o">+</span> <span class="n">np</span><span class="o">.</span><span class="n">diff</span><span class="p">(</span><span class="n">FPR</span><span class="p">)</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span> <span class="c1">#vectorized distance formula</span>
-    
-    <span class="n">length</span> <span class="o">=</span> <span class="n">length_arr</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
-    
     <span class="n">y</span> <span class="o">=</span> <span class="nb">abs</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">min</span><span class="p">(</span><span class="n">TPR</span><span class="p">))</span>
     <span class="n">x_plus_y</span> <span class="o">=</span> <span class="nb">abs</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">TPR</span><span class="p">))</span>
     <span class="n">x</span> <span class="o">=</span> <span class="nb">abs</span><span class="p">(</span><span class="n">x_plus_y</span> <span class="o">-</span> <span class="n">y</span><span class="p">)</span>
@@ -158,17 +161,28 @@
     <span class="n">xBar_plus_yBar</span> <span class="o">=</span> <span class="nb">abs</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">FPR</span><span class="p">))</span>
     <span class="n">xBar</span> <span class="o">=</span> <span class="nb">abs</span><span class="p">(</span><span class="n">xBar_plus_yBar</span> <span class="o">-</span> <span class="n">yBar</span><span class="p">)</span>
     
-    <span class="n">maximum_length</span> <span class="o">=</span> <span class="n">x</span> <span class="o">+</span> <span class="n">y</span> <span class="o">+</span> <span class="n">yBar</span> <span class="o">+</span> <span class="n">xBar</span>
+    <span class="n">maximum_length</span> <span class="o">=</span> <span class="n">x</span> <span class="o">+</span> <span class="n">y</span> <span class="o">+</span> <span class="n">yBar</span> <span class="o">+</span> <span class="n">xBar</span> <span class="c1">#max length should be the same as the original sample given that the overall integral should be preserved</span>
     
-    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;length = </span><span class="si">{:.02f}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">length</span><span class="p">))</span>
-    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;max length: </span><span class="si">{:.02f}</span><span class="s2"> = </span><span class="si">{:.02f}</span><span class="s2"> + </span><span class="si">{:.02f}</span><span class="s2"> + </span><span class="si">{:.02f}</span><span class="s2"> + </span><span class="si">{:.02f}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">maximum_length</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">yBar</span><span class="p">,</span> <span class="n">xBar</span><span class="p">))</span>
+    <span class="n">norm_fac</span> <span class="o">=</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">sample1</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span><span class="o">/</span><span class="n">target_integral1</span><span class="p">)</span> <span class="c1">#scales by the total absolute integral of the original sample</span>
+    <span class="n">TPR</span> <span class="o">*=</span> <span class="n">norm_fac</span>
+    
+    <span class="n">turning_point</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">argmin</span><span class="p">(</span><span class="n">TPR</span><span class="p">)</span>
+    
+    <span class="n">TPR_bot</span><span class="p">,</span> <span class="n">TPR_top</span> <span class="o">=</span> <span class="n">TPR</span><span class="p">[</span><span class="n">turning_point</span><span class="p">:],</span> <span class="n">TPR</span><span class="p">[:</span><span class="n">turning_point</span><span class="p">]</span>
+    <span class="n">FPR_bot</span><span class="p">,</span> <span class="n">FPR_top</span> <span class="o">=</span> <span class="n">FPR</span><span class="p">[</span><span class="n">turning_point</span><span class="p">:],</span> <span class="n">FPR</span><span class="p">[:</span><span class="n">turning_point</span><span class="p">]</span>
+    
+    <span class="n">area_below_bottom</span> <span class="o">=</span> <span class="nb">abs</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">trapz</span><span class="p">(</span><span class="n">FPR_bot</span><span class="p">,</span> <span class="n">TPR_bot</span><span class="p">))</span> <span class="c1">#abs because trapz is negative when going backwards but we want the actual area</span>
+    <span class="n">area_below_top</span> <span class="o">=</span> <span class="nb">abs</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">trapz</span><span class="p">(</span><span class="n">FPR_top</span><span class="p">,</span> <span class="n">TPR_top</span><span class="p">))</span> <span class="c1">#another abs because why not! extra protection</span>
+    
+    <span class="n">area_inside</span> <span class="o">=</span> <span class="n">area_below_top</span> <span class="o">-</span> <span class="n">area_below_bottom</span>
+    
+    <span class="n">length_arr</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">diff</span><span class="p">(</span><span class="n">TPR</span><span class="p">)</span><span class="o">**</span><span class="mi">2</span> <span class="o">+</span> <span class="n">np</span><span class="o">.</span><span class="n">diff</span><span class="p">(</span><span class="n">FPR</span><span class="p">)</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span> <span class="c1">#vectorized distance formula</span>
+    
+    <span class="n">length</span> <span class="o">=</span> <span class="n">length_arr</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
     
     <span class="n">score</span> <span class="o">=</span> <span class="n">length</span><span class="o">/</span><span class="n">maximum_length</span>
-    
-    
-    
-    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Score = </span><span class="si">{:.3f}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">score</span><span class="p">))</span>
-    
+    <span class="n">score</span> <span class="o">*=</span> <span class="n">length</span>
+        
     <span class="k">return</span> <span class="n">TPR</span><span class="p">,</span> <span class="n">FPR</span><span class="p">,</span> <span class="n">score</span><span class="p">,</span> <span class="n">area_inside</span></div>
 
 <div class="viewcode-block" id="ROC_curve"><a class="viewcode-back" href="../SUPER_ROC_Curves.html#SUPER_ROC_Curves.ROC_curve">[docs]</a><span class="k">def</span> <span class="nf">ROC_curve</span><span class="p">(</span><span class="n">sample1</span><span class="p">,</span> <span class="n">sample2</span><span class="p">):</span>
@@ -180,12 +194,6 @@
 <span class="sd">        The first data sample for your attribute. This is your &quot;True&quot; data</span>
 <span class="sd">    sample2 : numpy.ndarray</span>
 <span class="sd">        The second data sample for your attribute. This if your &quot;False&quot; data</span>
-<span class="sd">    bins : int or numpy.ndarray, optional</span>
-<span class="sd">        The number of bins for the ROC calculation. Can also be given a list of bins., by default 100</span>
-<span class="sd">    lower : float</span>
-<span class="sd">        The lower end of your sample range</span>
-<span class="sd">    upper : float</span>
-<span class="sd">        The upper end of your sample range</span>
 <span class="sd">    </span>
 
 <span class="sd">    Returns</span>

@@ -320,65 +320,6 @@
             
             <span class="bp">self</span><span class="o">.</span><span class="n">n_items</span> <span class="o">-=</span> <span class="mi">1</span>
             
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">counts_to_merge</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">local_edges</span></div>
-    
-<div class="viewcode-block" id="Grim_Brunelle_merger.run_local_faster"><a class="viewcode-back" href="../brunelle_merger.html#brunelle_merger.Grim_Brunelle_merger.run_local_faster">[docs]</a>    <span class="k">def</span> <span class="nf">run_local_faster</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">target_bin_number</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;attempts to run faster - needs to be debugged. WIP</span>
-
-<span class="sd">        Parameters</span>
-<span class="sd">        ----------</span>
-<span class="sd">        target_bin_number : int</span>
-<span class="sd">            the number of bins you want</span>
-
-<span class="sd">        Returns</span>
-<span class="sd">        -------</span>
-<span class="sd">        Tuple(numpy.ndarray, numpy.ndarray)</span>
-<span class="sd">            a numpy histogram of the new counts and bins</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        
-        <span class="n">things_to_recalculate</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">n_items</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)))</span>
-        <span class="n">combinations</span> <span class="o">=</span> <span class="p">{}</span>
-        <span class="n">scores</span> <span class="o">=</span> <span class="p">{}</span>
-        <span class="k">while</span> <span class="bp">self</span><span class="o">.</span><span class="n">n_items</span> <span class="o">&gt;</span> <span class="n">target_bin_number</span><span class="p">:</span>
-            <span class="c1"># print(things_to_recalculate)</span>
-            <span class="c1"># print(scores)</span>
-            <span class="c1"># print(combinations)</span>
-            
-            <span class="n">temp_counts</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">shape</span><span class="o">=</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">counts_to_merge</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="bp">self</span><span class="o">.</span><span class="n">counts_to_merge</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">-</span> <span class="mi">1</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">)</span>
-            <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">things_to_recalculate</span><span class="p">:</span> <span class="c1">#don&#39;t merge edge bins/counts!</span>
-                <span class="k">if</span> <span class="n">i</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
-                    <span class="n">score</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__MLM__</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span> <span class="c1">#try merging counts 1 with count 0 (backwards)</span>
-                    <span class="n">combinations</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
-                    <span class="n">scores</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="n">score</span>
-                <span class="n">score</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__MLM__</span><span class="p">(</span><span class="n">i</span><span class="p">,</span> <span class="n">i</span><span class="o">+</span><span class="mi">1</span><span class="p">)</span>
-                <span class="n">combinations</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="n">i</span><span class="p">,</span> <span class="n">i</span><span class="o">+</span><span class="mi">1</span><span class="p">)</span>
-                <span class="n">scores</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">score</span>
-            
-            <span class="n">item_to_delete</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="n">scores</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="n">scores</span><span class="o">.</span><span class="n">get</span><span class="p">)</span>
-            <span class="n">i1</span><span class="p">,</span> <span class="n">i2</span> <span class="o">=</span> <span class="n">combinations</span><span class="p">[</span><span class="n">item_to_delete</span><span class="p">]</span>
-            
-            <span class="c1"># print(i1, i2, self.n_items, &#39;\n&#39;)</span>
-            <span class="k">if</span> <span class="n">i1</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">n_items</span> <span class="o">-</span> <span class="mi">2</span><span class="p">:</span>
-                <span class="n">things_to_recalculate</span> <span class="o">=</span> <span class="nb">set</span><span class="p">([</span><span class="n">i</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span>
-            <span class="k">else</span><span class="p">:</span>
-                <span class="n">things_to_recalculate</span> <span class="o">=</span> <span class="nb">set</span><span class="p">((</span><span class="n">i1</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="n">i1</span><span class="p">))</span>
-            <span class="c1"># print(scores)</span>
-            <span class="c1"># print(combinations)</span>
-            <span class="k">for</span> <span class="n">index</span> <span class="ow">in</span> <span class="n">scores</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
-                <span class="k">if</span> <span class="n">index</span> <span class="o">&gt;</span> <span class="n">i1</span><span class="p">:</span>
-                    <span class="n">scores</span><span class="p">[</span><span class="n">index</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="n">scores</span><span class="p">[</span><span class="n">index</span><span class="p">]</span>
-                    <span class="n">scores</span><span class="p">[</span><span class="n">index</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">inf</span>
-                    
-                    <span class="n">old_i1</span><span class="p">,</span> <span class="n">old_i2</span> <span class="o">=</span> <span class="n">combinations</span><span class="p">[</span><span class="n">index</span><span class="p">]</span>
-                    <span class="n">combinations</span><span class="p">[</span><span class="n">index</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="n">old_i1</span> <span class="o">-</span> <span class="mi">1</span><span class="p">,</span> <span class="n">old_i2</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span>
-                    <span class="n">combinations</span><span class="p">[</span><span class="n">index</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">nan</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">nan</span><span class="p">)</span>
-            
-            <span class="n">temp_counts</span><span class="p">,</span> <span class="n">temp_bins</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__merge__</span><span class="p">(</span><span class="n">i1</span><span class="p">,</span> <span class="n">i2</span><span class="p">)</span>
-            
-            <span class="bp">self</span><span class="o">.</span><span class="n">counts_to_merge</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">local_edges</span> <span class="o">=</span> <span class="n">temp_counts</span><span class="p">,</span> <span class="n">temp_bins</span>
-            
-            <span class="bp">self</span><span class="o">.</span><span class="n">n_items</span> <span class="o">-=</span> <span class="mi">1</span>
-            
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">counts_to_merge</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">local_edges</span></div></div>
 
 <div class="viewcode-block" id="Grim_Brunelle_nonlocal"><a class="viewcode-back" href="../brunelle_merger.html#brunelle_merger.Grim_Brunelle_nonlocal">[docs]</a><span class="k">class</span> <span class="nc">Grim_Brunelle_nonlocal</span><span class="p">(</span><span class="n">Grim_Brunelle_merger</span><span class="p">):</span>
@@ -459,14 +400,38 @@
         <span class="n">np</span><span class="o">.</span><span class="n">set_printoptions</span><span class="p">(</span><span class="n">threshold</span><span class="o">=</span><span class="n">sys</span><span class="o">.</span><span class="n">maxsize</span><span class="p">)</span>
         <span class="n">edges_str</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array2string</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">physical_bins</span><span class="p">,</span> <span class="n">separator</span><span class="o">=</span><span class="s1">&#39;,&#39;</span><span class="p">,</span> <span class="n">formatter</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;float_kind&#39;</span><span class="p">:</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="s2">&quot;</span><span class="si">%.3f</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="n">x</span><span class="p">},</span> <span class="n">max_line_width</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">inf</span><span class="p">)</span>
         
-        <span class="n">docstr</span> <span class="o">=</span> <span class="s1">&#39;&#39;&#39;&quot;&quot;&quot;**place_entry** will place a set of observables into a given bin index from a previous optimization</span>
+        <span class="n">docstr_nD</span> <span class="o">=</span> <span class="s1">&#39;&#39;&#39;&quot;&quot;&quot;**place_entry** will place a set of observables into a given bin index from a previous optimization</span>
 
 <span class="s1">	Parameters</span>
 <span class="s1">	----------</span>
 <span class="s1">	N : int</span>
 <span class="s1">		The number of bins that you want total</span>
 <span class="s1">	observables : numpy.ndarray</span>
-<span class="s1">		A _1-d_ array of observables that you want to to place</span>
+<span class="s1">		A __1-d__ array of observables that you want to to place</span>
+<span class="s1">	verbose : bool, optional</span>
+<span class="s1">		Set to True if you want to print verbose options, by default False</span>
+
+<span class="s1">	Returns</span>
+<span class="s1">	-------</span>
+<span class="s1">	int</span>
+<span class="s1">		The bin index in range [0, N) that the observables will be placed at</span>
+
+<span class="s1">	Raises</span>
+<span class="s1">	------</span>
+<span class="s1">	ValueError</span>
+<span class="s1">		len(observables) must be equal to the shape of bin edges</span>
+<span class="s1">	ValueError</span>
+<span class="s1">		You asked for fewer bins than is possible!</span>
+<span class="s1">	&quot;&quot;&quot;&#39;&#39;&#39;</span>
+
+        <span class="n">docstr_1D</span> <span class="o">=</span> <span class="s1">&#39;&#39;&#39;&quot;&quot;&quot;**place_entry** will place a set of observables into a given bin index from a previous optimization</span>
+
+<span class="s1">	Parameters</span>
+<span class="s1">	----------</span>
+<span class="s1">	N : int</span>
+<span class="s1">		The number of bins that you want total</span>
+<span class="s1">	observables : float</span>
+<span class="s1">		An observable quantity that you are placing</span>
 <span class="s1">	verbose : bool, optional</span>
 <span class="s1">		Set to True if you want to print verbose options, by default False</span>
 
@@ -485,8 +450,15 @@
         
         
         <span class="n">code</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;import numpy as np&quot;</span><span class="p">]</span>
+        <span class="n">code</span> <span class="o">+=</span> <span class="p">[</span><span class="s2">&quot;import numba as nb&quot;</span><span class="p">]</span>
+        <span class="n">code</span> <span class="o">+=</span> <span class="p">[</span><span class="s2">&quot;mapping = np.memmap(&#39;&quot;</span><span class="o">+</span><span class="n">fname</span><span class="o">+</span> <span class="s2">&quot;.mm&#39;, dtype=np.int32, mode=&#39;r&#39;, shape=&quot;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">tracker</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span> <span class="o">+</span> <span class="s2">&quot;)&quot;</span><span class="p">]</span>
         <span class="n">code</span> <span class="o">+=</span> <span class="p">[</span><span class="s2">&quot;def place_entry(N, observables, verbose=False):&quot;</span><span class="p">]</span>
         <span class="n">code</span> <span class="o">=</span> <span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">code</span><span class="p">)</span>
+        
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">n_observables</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="n">docstr</span> <span class="o">=</span> <span class="n">docstr_nD</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">docstr</span> <span class="o">=</span> <span class="n">docstr_1D</span>
         
         <span class="n">func</span> <span class="o">=</span> <span class="p">[</span><span class="n">docstr</span><span class="p">]</span>
         <span class="n">func</span> <span class="o">+=</span> <span class="p">[</span><span class="s2">&quot;if len(observables) != </span><span class="si">{:.0f}</span><span class="s2">:&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">n_observables</span><span class="p">)]</span>
@@ -494,23 +466,25 @@
         <span class="n">func</span> <span class="o">+=</span> <span class="p">[</span><span class="s2">&quot;observables = np.array(observables, dtype=np.float64)&quot;</span><span class="p">]</span>
         <span class="n">func</span> <span class="o">+=</span> <span class="p">[</span><span class="s2">&quot;edges=np.array(&quot;</span><span class="o">+</span><span class="n">edges_str</span> <span class="o">+</span> <span class="s2">&quot;)&quot;</span><span class="p">]</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">n_observables</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
-            <span class="n">func</span> <span class="o">+=</span> <span class="p">[</span><span class="s2">&quot;observables = observables.reshape(1, edges.shape[0])&quot;</span><span class="p">]</span>
-            <span class="n">func</span> <span class="o">+=</span> <span class="p">[</span><span class="s2">&quot;counts, *_ = np.histogramdd(observables, edges)&quot;</span><span class="p">]</span>
+            <span class="n">func</span> <span class="o">+=</span> <span class="p">[</span><span class="s2">&quot;nonzero_rolled = np.zeros(</span><span class="si">{:.0f}</span><span class="s2">, dtype=np.uint8)&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">n_observables</span><span class="p">)]</span>
+            <span class="n">func</span> <span class="o">+=</span> <span class="p">[</span><span class="s2">&quot;for i in nb.prange(5):&quot;</span><span class="p">]</span>
+            <span class="n">func</span> <span class="o">+=</span> <span class="p">[</span><span class="s2">&quot;</span><span class="se">\t</span><span class="s2">nonzero_rolled[i] = np.searchsorted(edges[i], observables[i])&quot;</span><span class="p">]</span>
+            <span class="n">func</span> <span class="o">+=</span> <span class="p">[</span><span class="s2">&quot;nonzero_rolled -= 1&quot;</span><span class="p">]</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="n">func</span> <span class="o">+=</span> <span class="p">[</span><span class="s2">&quot;counts, *_ = np.histogram(observables, edges)&quot;</span><span class="p">]</span>
-        <span class="n">func</span> <span class="o">+=</span> <span class="p">[</span><span class="s2">&quot;nonzero_rolled = np.fromiter(map( lambda x: x[0], np.nonzero(counts)), dtype=np.uint64)&quot;</span><span class="p">]</span>
+            <span class="n">func</span> <span class="o">+=</span> <span class="p">[</span><span class="s2">&quot;nonzero_rolled = np.searchsorted(edges, observables) - 1&quot;</span><span class="p">]</span>
         <span class="n">func</span> <span class="o">+=</span> <span class="p">[</span><span class="s2">&quot;if verbose:&quot;</span><span class="p">]</span>
         <span class="n">func</span> <span class="o">+=</span> <span class="p">[</span><span class="s2">&quot;</span><span class="se">\t</span><span class="s2">print(&#39;original index of:&#39;, nonzero_rolled)&quot;</span><span class="p">]</span>
         <span class="n">func</span> <span class="o">+=</span> <span class="p">[</span><span class="s2">&quot;</span><span class="se">\t</span><span class="s2">print(&#39;This places your point in the range:&#39;)&quot;</span><span class="p">]</span>
-        <span class="n">func</span> <span class="o">+=</span> <span class="p">[</span><span class="s2">&quot;</span><span class="se">\t</span><span class="s2">for i in range(edges.shape[0]):&quot;</span><span class="p">]</span>
+        <span class="n">func</span> <span class="o">+=</span> <span class="p">[</span><span class="s2">&quot;</span><span class="se">\t</span><span class="s2">for i in nb.prange(edges.shape[0]):&quot;</span><span class="p">]</span>
         <span class="n">func</span> <span class="o">+=</span> <span class="p">[</span><span class="s2">&quot;</span><span class="se">\t\t</span><span class="s2">print(&#39;[&#39;, edges[i][nonzero_rolled[i]], &#39;,&#39;, edges[i][int(nonzero_rolled[i]+1)], &#39;]&#39;)&quot;</span><span class="p">]</span>
-        <span class="n">func</span> <span class="o">+=</span> <span class="p">[</span><span class="s2">&quot;counts = counts.ravel()&quot;</span><span class="p">]</span>
-        <span class="n">func</span> <span class="o">+=</span> <span class="p">[</span><span class="s2">&quot;nonzero = np.nonzero(counts)&quot;</span><span class="p">]</span>
-        <span class="n">func</span> <span class="o">+=</span> <span class="p">[</span><span class="s2">&quot;mapping = np.memmap(&#39;&quot;</span><span class="o">+</span><span class="n">fname</span><span class="o">+</span> <span class="s2">&quot;.mm&#39;, dtype=np.int32, mode=&#39;r&#39;, shape=&quot;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">tracker</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span> <span class="o">+</span> <span class="s2">&quot;)&quot;</span><span class="p">]</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">n_observables</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="n">func</span> <span class="o">+=</span> <span class="p">[</span><span class="s2">&quot;nonzero = (np.power(</span><span class="si">{:.0f}</span><span class="s2">, np.arange(</span><span class="si">{:.0f}</span><span class="s2">,-1,-1, np.int16))*nonzero_rolled).sum()&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">physical_bins</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">-</span> <span class="mi">1</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">n_observables</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">func</span> <span class="o">+=</span> <span class="p">[</span><span class="s2">&quot;nonzero = nonzero_rolled&quot;</span><span class="p">]</span>
         <span class="n">func</span> <span class="o">+=</span> <span class="p">[</span><span class="s2">&quot;mapped_val = mapping[N-1][nonzero]&quot;</span><span class="p">]</span>
         <span class="n">func</span> <span class="o">+=</span> <span class="p">[</span><span class="s2">&quot;if mapped_val &lt; 0:&quot;</span><span class="p">]</span>
-        <span class="n">func</span> <span class="o">+=</span> <span class="p">[</span><span class="s2">&quot;</span><span class="se">\t</span><span class="s2">raise ValueError(&#39;number of bins: &#39; + str(N) + &#39; was not calculated &#39;)&quot;</span><span class="p">]</span>
-        <span class="n">func</span> <span class="o">+=</span> <span class="p">[</span><span class="s2">&quot;return nonzero_rolled, mapped_val[0]&quot;</span><span class="p">]</span>
+        <span class="n">func</span> <span class="o">+=</span> <span class="p">[</span><span class="s2">&quot;</span><span class="se">\t</span><span class="s2">raise ValueError(&#39;Cannot have fewer than 0 bins!&#39;)&quot;</span><span class="p">]</span>
+        <span class="n">func</span> <span class="o">+=</span> <span class="p">[</span><span class="s2">&quot;return nonzero_rolled, mapped_val&quot;</span><span class="p">]</span>
         
         <span class="n">func</span> <span class="o">=</span> <span class="s2">&quot;</span><span class="se">\n\t</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">func</span><span class="p">)</span>
         <span class="n">func</span> <span class="o">=</span> <span class="s2">&quot;</span><span class="se">\n\t</span><span class="s2">&quot;</span> <span class="o">+</span> <span class="n">func</span>
