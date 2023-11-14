@@ -1,12 +1,10 @@
+import warnings
+import sys
 import numpy as np
 import matplotlib.pyplot as plt
 import mplhep as hep
 import matplotlib as mpl
-import histogram_helpers as h
 import tqdm
-import jit_methods as j
-import warnings
-import sys
 import numba as nb
 
 # plt.style.use(hep.style.ROOT)
@@ -15,25 +13,32 @@ import numba as nb
 
 class Grim_Brunelle_merger(object):#Professor Nathan Brunelle!
     #https://engineering.virginia.edu/faculty/nathan-brunelle
-    def __init__(self, bins, *counts, stats_check=True, subtraction_metric=True, weights=None, SM_version=False) -> None:
-        """This class is the base object for bin merging. It merges bins locally (by outting adjacent bins together).
-        Please only input 1 dimensional histograms! Should you need to operate upon a multidimensional histogram - please unroll them first.
+    def __init__(self, bins, *counts,
+                 stats_check=True, subtraction_metric=True, weights=None, SM_version=False):
+        """This class is the base object for bin merging.
+        It merges bins locally (by outting adjacent bins together).
+        Please only input 1 dimensional histograms!
+        Should you need to operate upon a multidimensional histogram - please unroll them first.
 
         Parameters
         ----------
         bins : numpy.ndarray
             These are your bin edges
         counts : numpy.ndarray
-            These are a set of bin counts put in as args. Place an unlimited number of them - each one corresponds to a different hypothesis. 
+            These are a set of bin counts put in as args.
+            Place an unlimited number of them - each one corresponds to a different hypothesis.
             Both bins and counts can be created using numpy.histogram()
         stats_check : bool, optional
             If you want to insert a statistics check enable this option, by default True
         subtraction_metric : bool, optional
-            If you want to use the metric that does subtraction. If false, it uses version of the metric that uses division, by default True
+            If you want to use the metric that does subtraction.
+            If false, it uses version of the metric that uses division, by default True
         weights : numpy.ndarray, optional
-            A list of weights of the same length as the number of counts put in for each hypothesis. If None all weights are 1, by default None
+            A list of weights of the same length as the number of counts put in.
+            If None all weights are 1, by default None
         SM_version : bool, optional
-            Whether you are using the "Standard Model" version where samples are compared to the first set of inputted counts instead of to everything else
+            Whether you are using the "Standard Model" version where samples 
+            are compared to the first set of inputted counts instead of to everything else
 
         Raises
         ------
@@ -60,17 +65,18 @@ class Grim_Brunelle_merger(object):#Professor Nathan Brunelle!
             raise ValueError('\n'+errortext)
 
         if weights != None and len(weights) != len(counts):
-            errortext = "If using weights, the number of weight values and the number of hypotheses should be the same!"
-            errortext += '\nCurrently there are {:.0f} hypotheses and {:.0f} weight value(s)'.format(len(counts), len(weights))
+            errortext = "The # of weight values and the # of hypotheses should be the same!"
+            errortext += f'\nThere are {len(counts)} hypotheses and {len(weights)} weight values'
             errortext = h.print_msg_box(errortext)
             raise ValueError('\n'+errortext)
-        
+
         if weights == None:
             weights = np.ones(len(counts), dtype=float)
         else:
             weights = np.array(weights)
-        
-        self.weights = np.outer(weights, weights) #generates a matrix from the outer product of two vectors
+
+        self.weights = np.outer(weights, weights)
+        #generates a matrix from the outer product of two vectors
 
         self.n = len(counts)
         self.subtraction_metric=subtraction_metric
@@ -87,7 +93,7 @@ class Grim_Brunelle_merger(object):#Professor Nathan Brunelle!
         if not stats_check:
             self.merged_counts, self.post_stats_merge_bins = self.original_counts.copy(), self.original_bins.copy()
         else:
-            self.merged_counts, self.post_stats_merge_bins = h.merge_bins(0.05*np.mean( stats_for_mean ), 
+            self.merged_counts, self.post_stats_merge_bins = h.merge_bins(0.05*np.mean(stats_for_mean), 
                                             bins, 
                                             *self.original_counts.copy()
                                             )
