@@ -288,12 +288,18 @@ class Grim_Brunelle_nonlocal(Grim_Brunelle_merger):
         self.original_n = self.n_items
         del self.local_edges #no need for local!
         
+        chunksize = (
+            1,
+            min(self.n_items, 31622), #31622 ~ sqrt(1E9 = 1 gB),
+            min(self.n_items, 31622)
+            )
+        
         self.tracker_file = h5py.File("tracker.hdf5", 'w', libver='latest') #THIS IS VERY SLOW PLEASE REVISE
         self.tracker = self.tracker_file.create_dataset(
             "tracker", (self.n_items, self.n_items, self.n_items), np.bool_,
             compression="gzip", compression_opts=9,
             fletcher32=True, fillvalue=np.False_,
-            chunks=(1, self.n_items, self.n_items),
+            chunks=chunksize,
             maxshape=(self.n_items, self.n_items, self.n_items),
             shuffle=True
             )
@@ -303,12 +309,12 @@ class Grim_Brunelle_nonlocal(Grim_Brunelle_merger):
             
         #                                                )
         
-        self.tracker[self.n_items - 1] = np.bool_(np.eye(self.n_items))
+        self.tracker[self.n_items - 1] = np.eye(self.n_items, dtype=np.bool_)
         
-        for i in range(self.n_items):
-            arr = np.full(self.n_items, np.False_, np.bool_)
-            arr[i] = np.True_
-            self.tracker[self.n_items - 1, i] = arr
+        # for i in range(self.n_items):
+        #     arr = np.full(self.n_items, np.False_, np.bool_)
+        #     arr[i] = np.True_
+        #     self.tracker[self.n_items - 1, i] = arr
         
         # if track:
             # self.tracker = np.empty((self.n_items, self.n_items), object)
@@ -345,15 +351,25 @@ class Grim_Brunelle_nonlocal(Grim_Brunelle_merger):
         tracker_h5 = f['tracker']
         tracker = da.from_array(tracker_h5, (1, self.original_n, self.original_n))
         
-        
-        bin_map = np.memmap(fname+".mm", dtype=np.int32, shape=(self.original_n, self.original_n), mode='w+')
-        bin_map[:] = -1
+        bin_map_file = h5py.File(fname+".hdf5", 'w', libver='latest')
+        # bin_map = np.memmap(fname+".mm", dtype=np.int32, shape=(self.original_n, self.original_n), mode='w+')
+        # bin_map[:] = -1
+        bin_map = bin_map_file.create_dataset(
+            "tracker", (self.original_n, self.original_n), np.int32,
+            compression="gzip", compression_opts=9,
+            fletcher32=True, fillvalue=-1,
+            chunks=(1, self.original_n),
+            maxshape=(self.original_n, self.original_n),
+            shuffle=True
+            )
         
         for n_iter in range(self.original_n):
             new_indices, old_indices = tracker[n_iter].compute().nonzero()
-            # print(indices)
+            temp = np.empty(self.original_n, dtype=np.int32)
             for new_index, old_index in zip(new_indices, old_indices):
-                bin_map[n_iter][old_index] = new_index
+                temp[old_index] = new_index
+            
+            bin_map[n_iter] = temp
             # for new_bin_index, old_indices in enumerate(indices):
             #     for old_index in old_indices:
             #         bin_map[n_iter][old_index] = new_bin_index
@@ -420,7 +436,10 @@ class Grim_Brunelle_nonlocal(Grim_Brunelle_merger):
         
         
         code = ["import numpy as np"]
-        code += ["mapping = np.memmap('"+fname+ ".mm', dtype=np.int32, mode='r', shape=" + str((self.original_n, self.original_n)) + ")"]
+        code += ["import h5py"]
+        code += ["f = h5py.File('"+fname+".hdf5', 'r')"]
+        # code += ["mapping = np.memmap('"+fname+ ".mm', dtype=np.int32, mode='r', shape=" + str((self.original_n, self.original_n)) + ")"]
+        code += ["mapping = f['tracker']"]
         code += ["def place_entry(N, observables, verbose=False):"]
         code = "\n".join(code)
         
@@ -544,8 +563,10 @@ class Grim_Brunelle_nonlocal(Grim_Brunelle_merger):
         """
         # print("USING INDICES:", indices, "With BRUTE_FORCE=", brute_force)
         smallest_distance = (np.inf, None, None)
-        for i in range(self.n_items):
+        # for i in range(self.n_items):
+        for i in tqdm.tqdm(range(self.n_items), leave=False, position=0, total=self.n_items, desc=f"Iteration {self.original_n - self.n_items}"):
             for j in self.things_to_recalculate:
+            # for j in tqdm.tqdm(self.things_to_recalculate, leave=False, position=0, total=len(self.things_to_recalculate), desc=f"running on bin {i}"):
                 if i == j:
                     self.scores[i][j] = np.inf
                     continue
@@ -579,7 +600,7 @@ class Grim_Brunelle_nonlocal(Grim_Brunelle_merger):
             msg += "\nNo merging will occur"
             warnings.warn("\n"+h.print_msg_box(msg, title="WARNING"))
             
-        pbar = tqdm.tqdm(total=self.n_items - target_bin_number)
+        # pbar = tqdm.tqdm(total=self.n_items - target_bin_number)
         while self.n_items > target_bin_number:
             start = time.time()
             distance, i, j = self.__closest_pair__()
@@ -588,7 +609,7 @@ class Grim_Brunelle_nonlocal(Grim_Brunelle_merger):
             self.__merge__(i,j)
             merge_time = time.time()
             print("MERGE TIME:", merge_time - dist_time)
-            pbar.update(1)
+            # pbar.update(1)
         print()
         self.tracker_file.close()
     
