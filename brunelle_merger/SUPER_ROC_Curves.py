@@ -135,11 +135,13 @@ def ROC_curve(sample1, sample2):
     hypo2_counts = np.array(sample2)
     
     sample_sum1 = sample1.sum()
+    sample_sum1_sq = sample_sum1**2
     sample_sum2 = sample2.sum()
+    sample_sum2_sq = sample_sum2**2
     
-    # print(list(g1_phi_counts))
-    # print()
-    # print(list(g4_phi_counts))
+    Tx_Ty = sample_sum1*sample_sum2
+    TxSq_Ty = sample_sum1_sq*sample_sum2
+    Tx_TySq = sample_sum1*sample_sum2_sq
     
     ratios = sorted(
         list(enumerate(hypo2_counts/hypo1_counts)), key=lambda x: x[1], reverse=True
@@ -157,20 +159,21 @@ def ROC_curve(sample1, sample2):
     NAC = np.zeros(length) #"negative" above cutoff
     NBC = np.zeros(length) #"negative" below cutoff
     
-    S1 = 0
-    
-    for n in range(length):
-        above_cutoff = ratios[n:]
-        below_cutoff = ratios[:n]
+    err = 0
+    for i in range(length):
+        above_cutoff = ratios[i:]
+        below_cutoff = ratios[:i]
         
-        PAC[n] = hypo1_counts[above_cutoff].sum() #gets the indices listed
-        PBC[n] = hypo1_counts[below_cutoff].sum()
+        PAC[i] = hypo1_counts[above_cutoff].sum() #gets the indices listed
+        PBC[i] = hypo1_counts[below_cutoff].sum()
         
-        NAC[n] = hypo2_counts[above_cutoff].sum()
-        NBC[n] = hypo2_counts[below_cutoff].sum()
+        NAC[i] = hypo2_counts[above_cutoff].sum()
+        NBC[i] = hypo2_counts[below_cutoff].sum()
         
-        if n > 0:
-            S1 += hypo1_counts[ratios[n - 1]]*(hypo2_counts[below_cutoff].sum())**2
+        if i > 0:
+            accum_2 = hypo2_counts[below_cutoff].sum()
+            alpha_j = (hypo1_counts*accum_2).sum()
+            err += hypo1_counts[ratios[i - 1]]*(accum_2/Tx_Ty - alpha_j/TxSq_Ty)**2 + hypo2_counts[ratios[i - 1]]*(sample_sum1/Tx_Ty - alpha_j/Tx_TySq)**2
         # else:
         #     S = hypo1_counts[ratios[n]]*(hypo2_counts[below_cutoff].sum())**2
 
@@ -183,12 +186,6 @@ def ROC_curve(sample1, sample2):
         #     NBC += g4_phi_counts[bin_index]
         # TPR.append(1 - PAC/(PAC + PBC))
         # FPR.append(1 - NAC/(NAC + NBC))
-    
-    S1 /= sample_sum1*sample_sum2**2
-    S2 = (hypo2_counts*(hypo1_counts.sum()**2)).sum()
-    S2 /= sample_sum2*sample_sum1**2
-    
-    err = S1 + S2
     
     PAC, PBC = PAC/sample_sum1, PBC/sample_sum1
     NAC, NBC = NAC/sample_sum2, NBC/sample_sum2
