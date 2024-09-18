@@ -28,6 +28,7 @@ class bin_splitter{
         size_t nPoints;
         size_t nHypotheses;
         std::vector<std::string> encodedFinalStrings;
+        std::vector<int> finalBinCounts;
         std::vector<int> hypoList;
         std::vector<int> observablesList;
         std::vector<std::pair<double,double>> maximaAndMinima;
@@ -71,7 +72,7 @@ class bin_splitter{
 
         void reset();
 
-        ~bin_splitter();
+        ~bin_splitter() noexcept;
 };
 
 #endif

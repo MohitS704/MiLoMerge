@@ -70,6 +70,7 @@ void bin_splitter::initialize(
     this->hypoList = std::vector<int>(this->nHypotheses);
     this->observablesList = std::vector<int>(this->nObservables);
     this->encodedFinalStrings = std::vector<std::string>();
+    this->finalBinCounts = std::vector<int>();
     
     //matrices of size (this->nPoints, this->nObservables + 1)
     this->data = std::vector<Eigen::ArrayXXd>(this->nHypotheses);
@@ -144,8 +145,6 @@ void bin_splitter::score(
     long double& metricVal,
     bool compareToFirstOnly
 ){
-    // Eigen::VectorXd b1Vec = (this->data).col(this->nObservables)(b1);
-    // Eigen::VectorXd b2Vec = (this->data).col(this->nObservables)(b2);
     metricVal = 0;
     std::vector<int> hypothesisTopLoop;
     if(compareToFirstOnly){
@@ -278,14 +277,6 @@ void bin_splitter::split(
             h++;
         }
 
-        // for(size_t index : (this->bins)[encodedCut]){
-        //     if((this->data).coeff(chosenEdgeIndex, chosenObs) > cut){
-        //         b1.push_back((int)index);
-        //     } else{
-        //         b2.push_back((int)index);
-        //     }
-        // }
-
         //old cut is no longer a leaf
         //replace it with this!
 
@@ -306,20 +297,33 @@ void bin_splitter::split(
     cutsFile.open("cuts.log");
     for(auto it: this->bins){
         this->encodedFinalStrings.push_back(it.first);
+        this->finalBinCounts.push_back(it.second.size());
         cutsFile << it.first << "\n";
     }
     cutsFile.close();
 }
 
-// void bin_splitter::reset(){
-//     this->bins.clear();
-//     this->encodedFinalStrings.clear();
-//     std::vector<int> starting_bin(this->nPoints);
-//     for(int i = 0; i < this->nPoints; i++){
-//         (starting_bin)[i] = i;
-//     }
-//     this->bins.emplace("", starting_bin);
-// }
+void bin_splitter::reset(){
+    this->bins.clear();
+    this->encodedFinalStrings.clear();
+    std::vector<std::vector<int>> starting_bin;
 
-bin_splitter::~bin_splitter(){
+    for (int h = 0; h < this->nHypotheses; h++){
+        starting_bin.push_back(std::vector<int>());
+        for(int i = 0; i < this->nPoints; i++){
+            (starting_bin)[h].push_back(i);
+        }
+    }
+    this->bins.emplace("", starting_bin);
+}
+
+bin_splitter::~bin_splitter() noexcept{
+    this->bins.clear();
+    this->encodedFinalStrings.clear();
+    this->data.clear();
+    this->finalBinCounts.clear();
+    this->hypoList.clear();
+    this->observablesList.clear();
+    this->maximaAndMinima.clear();
+    this->bins.clear();
 }
