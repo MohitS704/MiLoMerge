@@ -1,9 +1,14 @@
 import warnings
+import os
+import sys
 from abc import ABC, abstractmethod
 import numpy as np
 import tqdm
 import numba as nb
 import h5py
+
+DIR = __file__[:__file__.rfind("/")]
+sys.path.append(os.path.abspath(DIR + "/../metrics/"))
 from ROC_curves import ROC_score
 
 class Merger(ABC):
@@ -82,7 +87,7 @@ class Merger(ABC):
         self.comp_to_first = comp_to_first
 
         self.counts = np.vstack(counts).astype(np.float64)
-        self.counts /= self.counts.sum(axis=1)[:, None]
+        self.counts /= np.abs(self.counts).sum(axis=1)[:, None]
         self.counts[~np.isfinite(self.counts)] = 0
 
         self.bin_edges = np.array(bin_edges, dtype=np.float64)

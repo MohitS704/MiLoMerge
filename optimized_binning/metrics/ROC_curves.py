@@ -265,8 +265,8 @@ def length_scale_ROC(sample1, target_integral1, sample2, target_integral2):
     
     print("NORMS:", np.abs(sample1).sum()/target_integral1, np.abs(sample2).sum()/target_integral2)
     
-    hypo1_counts = sample1.copy()/np.abs(sample1).sum()
-    hypo2_counts = sample2.copy()/np.abs(sample2).sum()
+    hypo1_counts = sample1.copy()#/np.abs(sample1).sum()
+    hypo2_counts = sample2.copy()#/np.abs(sample2).sum()
     
     print("NORMS:", np.abs(hypo1_counts).sum(), np.abs(hypo2_counts).sum())
         
@@ -329,9 +329,8 @@ def length_scale_ROC(sample1, target_integral1, sample2, target_integral2):
     length_arr = np.sqrt(np.diff(TPR)**2 + np.diff(FPR)**2) #vectorized distance formula
     
     length = length_arr.sum()
-    
-    score = length/maximum_length
-    score *= length
+
+    score = length
         
     return TPR, FPR, score, area_inside
 
