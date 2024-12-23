@@ -8,10 +8,6 @@ import tqdm
 import numba as nb
 import h5py
 
-DIR = __file__[:__file__.rfind("/")]
-sys.path.append(os.path.abspath(DIR + "/../metrics/"))
-from ROC_curves import ROC_score
-
 class Merger(ABC):
     """Abstract class that serves as a baseplate for both the local and nonlocal merger"""
     def __init__(
@@ -21,7 +17,6 @@ class Merger(ABC):
             weights=None,
             comp_to_first=False,
             map_at=None,
-            brute_force_at=10
         ) -> None:
         """The initializer for the baseplate class
 
@@ -102,49 +97,6 @@ class Merger(ABC):
                 raise TypeError("Parameter map_at must be an iterable!") from e
 
         self.map_at = [i for i in map_at if i < self.n_items]
-        self.brute_force_at = brute_force_at
-        self.utilize_brute_force = self.n_items <= brute_force_at
-
-    @staticmethod
-    @nb.njit(fastmath=True, cache=True, nogil=True, parallel=True)
-    def __roc_score_comp_to_first(counts, weights, b, b_prime):
-        """This method calls ROC_curves.ROC_score to compare all samples to the first "sm" sample 
-        provided and issue a score between the two bin indices.
-        
-        Internal method!
-
-        Parameters
-        ----------
-        counts : numpy.ndarray
-            An ndarray of the counts with shape (#samples, #bins)
-        weights : numpy.ndarray
-            An ndarray of the weights for each of the samples
-        b : int
-            the index of the first bin that is being calculated
-        b_prime : int
-            the index of the second bin that is being calculated
-
-        Returns
-        -------
-        float
-            The inverse of the ROC score that is calculated
-        """
-        roc_summation = 0
-        merged_into, to_be_merged =  sorted((b, b_prime))
-        h = 0
-
-        to_be_merged_val = counts[0, to_be_merged]
-        h_counts = np.delete(counts[0], to_be_merged)
-        h_counts[merged_into] += to_be_merged_val
-        for h_prime, h_prime_counts in enumerate(counts[1:]):
-            h_prime += 1
-
-            to_be_merged_val = h_prime_counts[to_be_merged]
-            h_prime_counts = np.delete(h_prime_counts, to_be_merged)
-            h_prime_counts[merged_into] += to_be_merged_val
-            roc_summation += ROC_score(h_counts, h_prime_counts)*weights[h, h_prime]
-
-        return 1/roc_summation
 
 
     @staticmethod
@@ -183,47 +135,6 @@ class Merger(ABC):
 
         return metric_val
 
-
-    @staticmethod
-    @nb.njit(fastmath=True, cache=True, nogil=True, parallel=True)
-    def __roc_score_comp_to_all(counts, weights, b, b_prime):
-        """This method calls ROC_curves.ROC_score to compare all samples to each other 
-        and issue a score between the two bin indices.
-        
-        Internal method!
-
-        Parameters
-        ----------
-        counts : numpy.ndarray
-            An ndarray of the counts with shape (#samples, #bins)
-        weights : numpy.ndarray
-            An ndarray of the weights for each of the samples
-        b : int
-            the index of the first bin that is being calculated
-        b_prime : int
-            the index of the second bin that is being calculated
-
-        Returns
-        -------
-        float
-            The inverse of the ROC score that is calculated
-        """
-        roc_summation = 0
-        merged_into, to_be_merged =  sorted((b, b_prime))
-        for h, h_counts in enumerate(counts):
-            to_be_merged_val = h_counts[to_be_merged]
-            h_counts = np.delete(h_counts, to_be_merged)
-            h_counts[merged_into] += to_be_merged_val
-            for h_prime, h_prime_counts in enumerate(counts[h+1:]):
-                h_prime += h+1
-
-                to_be_merged_val = h_prime_counts[to_be_merged]
-                h_prime_counts = np.delete(h_prime_counts, to_be_merged)
-                h_prime_counts[merged_into] += to_be_merged_val
-                roc_summation += ROC_score(h_counts, h_prime_counts)*weights[h, h_prime]
-
-        return 1/roc_summation
-
     @staticmethod
     @nb.njit(fastmath=True, cache=True, nogil=True)
     def __mlm_driver_comp_to_all(n, counts, weights, b, b_prime):
@@ -256,7 +167,7 @@ class Merger(ABC):
                 t2 = counts[h_prime, b_prime]*weights[h, h_prime]
                 t3 = counts[h, b_prime]*weights[h, h_prime]
                 t4 = counts[h_prime, b]*weights[h, h_prime]
-
+                
                 metric_val += (t1*t2)**2 + (t3*t4)**2 - 2*t1*t2*t3*t4
 
         return metric_val
@@ -280,28 +191,16 @@ class Merger(ABC):
         float
             A score as determined by the appropriate method being called
         """
-        if self.utilize_brute_force:
-            if self.comp_to_first:
-                return self.__roc_score_comp_to_first(
-                    self.counts.copy(), self.weights,
-                    b, b_prime
-                )
-            else:
-                return self.__roc_score_comp_to_all(
-                    self.counts.copy(), self.weights,
-                    b, b_prime
-                )
-        else:
-            if self.comp_to_first:
-                return self.__mlm_driver_comp_to_first(
-                    self.n_hypotheses, self.counts,
-                    self.weights, b, b_prime
-                )
-
-            return self.__mlm_driver_comp_to_all(
+        if self.comp_to_first:
+            return self.__mlm_driver_comp_to_first(
                 self.n_hypotheses, self.counts,
                 self.weights, b, b_prime
             )
+
+        return self.__mlm_driver_comp_to_all(
+            self.n_hypotheses, self.counts,
+            self.weights, b, b_prime
+        )
 
     def __repr__(self) -> str:
         """Representation of the merger object
@@ -360,7 +259,6 @@ class MergerLocal(Merger):
             weights=None,
             comp_to_first=False,
             map_at = None,
-            brute_force_at=0,
             file_prefix=""
         ) -> None:
         """The initializer for the local merging class
@@ -393,7 +291,7 @@ class MergerLocal(Merger):
         """
         super().__init__(
             bin_edges, *counts, weights=weights, comp_to_first=comp_to_first,
-            map_at=map_at, brute_force_at=brute_force_at
+            map_at=map_at
             )
 
         if self.bin_edges.ndim > 1:
@@ -515,33 +413,37 @@ class MergerLocal(Merger):
         pbar = tqdm.tqdm(
             total=self.n_items - target_bin_number,
             desc="Binning locally:", leave=True, position=0
-            )
+        )
+        
+        things_to_recalculate = set(range(1, self.n_items - 1))
+        scores = np.full((self.n_items - 1, 3), np.inf, dtype=np.float64)
+        
         while self.n_items > target_bin_number:
-            best_combo = None
-            best_score = np.inf
+            for i in things_to_recalculate:
+                scores[i] = i, i+1, self._mlm(i, i+1)
+                if i == 1:
+                    scores[0] = 0, 1, self._mlm(1, 0)
+            
+            i1, i2 = scores[np.argmin(scores[:,2])][:-1].astype(int)
+            scores[:,:-1][i1:] -= 1
+            scores = np.delete(scores, i1, axis=0)
+            
+            if i1 == 0:
+                things_to_recalculate = {0,1}
+                i1, i2 = i2, i1
+            elif i1 == self.n_items - 2:
+                things_to_recalculate = {i1 - 2, i1 - 3}
+            else:
+                things_to_recalculate = {i1 - 1, i1}
 
-            for i in range(1, self.n_items - 1):
-                score = self._mlm(i, i+1)
-                if score < best_score:
-                    best_combo = (i, i+1)
-                    best_score = score
-
-            score = self._mlm(1, 0)
-            if score < best_score:
-                best_combo = (1, 0)
-
-            self.counts, self.bin_edges = self._merge(*best_combo)
+            self.counts, self.bin_edges = self._merge(i1, i2)
 
             self.n_items -= 1
 
             if self.n_items in self.map_at:
                 self.tracker[str(self.n_items)][:] = self.bin_edges
-            if not self.utilize_brute_force and self.n_items == self.brute_force_at:
-                self.utilize_brute_force = True
             pbar.update(1)
 
-        if self.tracker is not None:
-            self.tracker.close()
         return self.bin_edges
 
 
@@ -554,7 +456,6 @@ class MergerNonlocal(Merger):
             weights=None,
             comp_to_first=False,
             map_at = None,
-            brute_force_at=10,
             file_prefix=""
         ) -> None:
         """The initializer for the non-local merging class
@@ -592,7 +493,7 @@ class MergerNonlocal(Merger):
         super().__init__(
             unrolled_bins, *unrolled_counts,
             weights=weights, comp_to_first=comp_to_first,
-            map_at=map_at, brute_force_at=brute_force_at
+            map_at=map_at
             )
 
         self._merger_type = "Non-local"
@@ -756,12 +657,6 @@ class MergerNonlocal(Merger):
             self.n_items -= 1
             if self.n_items in self.map_at:
                 self.tracker[str(self.n_items)][:] = self.__convert_tracker()
-
-            if not self.utilize_brute_force and self.n_items == self.brute_force_at:
-                self.utilize_brute_force = True
-
-            if self.utilize_brute_force:
-                self.things_to_recalculate = tuple(range(self.n_items))
 
             pbar.update(1)
 
