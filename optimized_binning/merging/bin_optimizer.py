@@ -60,7 +60,7 @@ def closest_pair_driver(
     n_items, things_to_recalculate, scores,
     counts, n_hypotheses, weights, comp_to_first
 ):
-    for i in nb.prange(n_items):
+    for i in range(n_items):
         for j in things_to_recalculate:
             if i == j:
                 scores[i][j] = np.inf
@@ -156,7 +156,8 @@ class Merger(ABC):
             except Exception as e:
                 raise TypeError("Parameter map_at must be an iterable!") from e
 
-        self.map_at = [i for i in map_at if i < self.n_items]
+        #sets are nice and hashed
+        self.map_at = set([i for i in map_at if i < self.n_items])
 
     def __repr__(self) -> str:
         """Representation of the merger object
@@ -477,8 +478,14 @@ class MergerNonlocal(Merger):
             for i in self.things_to_recalculate:
                 self.__cur_iteration_tracker[i] = np.array([i], dtype=np.int64)
 
+            tracker_name = f".{file_prefix}_tracker.hdf5"
+            bins_name = f".{file_prefix}_physical_bins.npy"
+
+            if os.path.exists(tracker_name):
+                os.system(f"rm {tracker_name} {bins_name}")
+                
             self.tracker =  h5py.File(
-                f".{file_prefix}_tracker.hdf5", 'w',
+                tracker_name, 'w',
                 libver='latest', driver=None,
                 )
 
@@ -490,7 +497,7 @@ class MergerNonlocal(Merger):
                     maxshape=(self.original_n_items), shuffle=True
                 )
 
-                np.save(f".{file_prefix}_physical_bins.npy", self.physical_bins,
+                np.save(bins_name, self.physical_bins,
                         fix_imports=False, allow_pickle=True)
         else:
             self.__cur_iteration_tracker = nb.typed.Dict()

@@ -203,10 +203,13 @@ def place_array_nonlocal(N, observables, file_prefix="", verbose=False):
         nonzero_rolled = np.searchsorted(physical_bins, observables_stacked) - 1
         unrolled_index = nonzero_rolled
 
-    test_arr = np.logical_or(nonzero_rolled < 0, nonzero_rolled > n_physical_bins - 1)
-    if np.any(test_arr):
-        raise ValueError(f"observables at indices {np.nonzero(test_arr)} is outside of the provided phase space!")
-
+    failed_events = (unrolled_index > len(bin_mapping))
+    if np.any(failed_events):
+        print("The following events have indices that are too large:")
+        for i, j in zip(nonzero_rolled[failed_events], unrolled_index[failed_events]):
+            print(f"{i} = {j}")
+        raise KeyError("Please check your phasespace to ensure it is within your original binning!")
+    
     return bin_mapping[unrolled_index].ravel()
 
 def place_local(N, observable_array, file_prefix="", verbose=False):
