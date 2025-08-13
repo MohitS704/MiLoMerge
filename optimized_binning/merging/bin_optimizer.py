@@ -41,31 +41,45 @@ def mlm_driver(n, counts, weights, b, b_prime, comp_to_first):
     else:
         h_range = np.arange(1)
     for h in h_range:
+        t1 = counts[h, b]
+        t3 = counts[h, b_prime]
         for h_prime in np.arange(h+1, n):
-            t1 = counts[h, b]*weights[h, h_prime]
-            t2 = counts[h_prime, b_prime]*weights[h, h_prime]
-            t3 = counts[h, b_prime]*weights[h, h_prime]
-            t4 = counts[h_prime, b]*weights[h, h_prime]
+            t2 = counts[h_prime, b_prime]
+            t4 = counts[h_prime, b]
 
-            metric_val += (t1*t2)**2 + (t3*t4)**2 - 2*t1*t2*t3*t4
+            metric_val += (t1*t2 - t3*t4)**2 * weights[h, h_prime]**4
 
     return metric_val
 
 
 @nb.njit(
-    "(int64,ListType(int64),Array(float64, 2, 'C', False, aligned=True),Array(float64, 2, 'C', False, aligned=True),int64,Array(float64, 2, 'C', False, aligned=True), b1)",
-    parallel=False, cache=True, nogil=True
+    "(int64,Array(int64, 1, 'C', False, aligned=True), Array(float64, 2, 'C', False, aligned=True),Array(float64, 2, 'C', False, aligned=True),int64,Array(float64, 2, 'C', False, aligned=True), b1)",
+    parallel=False, cache=False, nogil=True
 )
 def closest_pair_driver(
     n_items, things_to_recalculate, scores,
     counts, n_hypotheses, weights, comp_to_first
 ):
+    if comp_to_first:
+        h_range = range(n_hypotheses)
+    else:
+        h_range = range(1)
+    
     for i in range(n_items):
         for j in things_to_recalculate:
             if i == j:
                 scores[i][j] = np.inf
                 continue
-            scores[i][j] = mlm_driver(n_hypotheses, counts, weights, i, j, comp_to_first)
+            metric_val = 0
+            for h in h_range:
+                t1 = counts[h, i]
+                t3 = counts[h, j]
+                for h_prime in np.arange(h+1, n_hypotheses):
+                    t2 = counts[h_prime, j]
+                    t4 = counts[h_prime, i]
+
+                    metric_val += (t1*t2 - t3*t4)**2 * weights[h, h_prime]**4
+            scores[i][j] = metric_val
     
     return scores.argmin()
 
@@ -351,7 +365,7 @@ class MergerLocal(Merger):
             raise ValueError("This is local binning! Can only merge ahead or behind!")
 
 
-    def run(self, target_bin_number=2):
+    def run(self, target_bin_number=2, return_counts=False):
         """Runs the merger
 
         Parameters
@@ -412,6 +426,8 @@ class MergerLocal(Merger):
                 self.tracker[str(self.n_items)][:] = self.bin_edges
             pbar.update(1)
 
+        if return_counts:
+            return self.bin_edges, self.counts
         return self.bin_edges
 
 
@@ -471,7 +487,7 @@ class MergerNonlocal(Merger):
         self.n_observables = len(bin_edges)
 
         self.scores = np.zeros((self.n_items, self.n_items), dtype=np.float64)
-        self.things_to_recalculate = nb.typed.List(range(self.n_items))
+        self.things_to_recalculate = np.arange(self.n_items, dtype=int)
 
         if any(self.map_at):
             self.__cur_iteration_tracker = nb.typed.Dict()
@@ -600,7 +616,7 @@ class MergerNonlocal(Merger):
                 self.n_items, self.n_hypotheses, self.counts, self.scores,
                 i, j
             )
-        self.things_to_recalculate = nb.typed.List([k, ])
+        self.things_to_recalculate = np.array([k, ], dtype=int)
 
 
         if self.tracker is not None:

@@ -151,10 +151,12 @@ def place_event_nonlocal(N, *observable, file_prefix="", verbose=False):
 
     return mapped_index
 
-def place_array_nonlocal(N, observables, file_prefix="", verbose=False):
+def place_array_nonlocal(N, observables, file_prefix="", verbose=False, file_path=""):
+    if file_path != "" and file_path[-1] != "/":
+        file_path += "/"
 
-    fname_tracker = f".{file_prefix}_tracker.hdf5"
-    fname_bins = f".{file_prefix}_physical_bins.npy"
+    fname_tracker = f"{file_path}.{file_prefix}_tracker.hdf5"
+    fname_bins = f"{file_path}.{file_prefix}_physical_bins.npy"
     bin_mapping, physical_bins = load_file_nonlocal(fname_tracker, fname_bins, str(N))
     observables_stacked = np.array(observables)
 
@@ -169,12 +171,13 @@ def place_array_nonlocal(N, observables, file_prefix="", verbose=False):
         n_datapoints, n_observables = observables_stacked.shape
         nonzero_rolled = np.zeros((n_datapoints, n_observables), dtype=np.uint64)
         for i in range(n_observables):
-            nonzero_rolled[:, i] = np.searchsorted(physical_bins[i], observables_stacked[:, i]) - 1
+            left_edge_mask = observables_stacked[:, i] == physical_bins[i][0]
+            nonzero_rolled[:, i][~left_edge_mask] = np.searchsorted(physical_bins[i], observables_stacked[:, i][~left_edge_mask]) - 1
         if verbose:
             print("Original indices")
             print(nonzero_rolled)
 
-        unrolled_index = (np.power(n_physical_bins - 1, np.arange(n_observables - 1,-1,-1, np.int16))*nonzero_rolled).sum(axis=1)
+        unrolled_index = (np.power(n_physical_bins - 1, np.arange(n_observables - 1,-1,-1, np.int64))*nonzero_rolled).sum(axis=1)
         unrolled_index = unrolled_index.astype(int)
     elif np.any(subarray_lengths != subarray_lengths[0]):
         if len(observables_stacked[0]) != len(physical_bins):
