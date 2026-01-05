@@ -1,6 +1,5 @@
 import warnings
 import os
-import sys
 
 from abc import ABC, abstractmethod
 import numpy as np
@@ -9,8 +8,8 @@ import numba as nb
 import h5py
 
 @nb.njit(
-    "float64(int64, Array(float64, 2, 'C', False, aligned=True), Array(float64, 2, 'C', False, aligned=True), int64, int64, b1)",
-    fastmath=True, cache=True, nogil=True
+    "float64(int64, Array(float64, 2, 'F', False, aligned=True), Array(float64, 2, 'C', False, aligned=True), int64, int64, b1)",
+    fastmath=True, cache=False, parallel=False
 )
 def mlm_driver(n, counts, weights, b, b_prime, comp_to_first):
     """This method uses the MLM metric to compare all samples to each other
@@ -23,11 +22,13 @@ def mlm_driver(n, counts, weights, b, b_prime, comp_to_first):
     counts : numpy.ndarray
         An ndarray of the counts with shape (#samples, #bins)
     weights : numpy.ndarray
-        An ndarray of the weights for each of the samples
+        An ndarray of per-sample weight with size (#samples)
     b : int
-        the index of the first bin that is being calculated
+        The index of the first bin that is being calculated
     b_prime : int
-        the index of the second bin that is being calculated
+        The index of the second bin that is being calculated
+    comp_to_first : bool
+        Whether comparisons are only done between every sample and sample 0
 
     Returns
     -------
@@ -36,14 +37,11 @@ def mlm_driver(n, counts, weights, b, b_prime, comp_to_first):
     """
 
     metric_val = 0
-    if comp_to_first:
-        h_range = np.arange(n)
-    else:
-        h_range = np.arange(1)
+    h_range = range(1) if comp_to_first else range(n)
     for h in h_range:
         t1 = counts[h, b]
         t3 = counts[h, b_prime]
-        for h_prime in np.arange(h+1, n):
+        for h_prime in range(h+1, n):
             t2 = counts[h_prime, b_prime]
             t4 = counts[h_prime, b]
 
@@ -53,20 +51,24 @@ def mlm_driver(n, counts, weights, b, b_prime, comp_to_first):
 
 
 @nb.njit(
-    "(int64,Array(int64, 1, 'C', False, aligned=True), Array(float64, 2, 'C', False, aligned=True),Array(float64, 2, 'C', False, aligned=True),int64,Array(float64, 2, 'C', False, aligned=True), b1)",
-    parallel=False, cache=False, nogil=True
+    "(int64, Array(int64, 1, 'C', False, aligned=True), Array(float64, 2, 'A', False, aligned=True), Array(float64, 2, 'F', False, aligned=True), int64, Array(float64, 2, 'C', False, aligned=True), b1)",
+    parallel=False, cache=False
 )
-def closest_pair_driver(
+def _closest_pair_driver(
     n_items, things_to_recalculate, scores,
     counts, n_hypotheses, weights, comp_to_first
 ):
-    if comp_to_first:
-        h_range = range(n_hypotheses)
-    else:
-        h_range = range(1)
+    h_range = range(1) if comp_to_first else range(n_hypotheses)
+
+    row_min_vals = np.full(n_items, np.inf, dtype=np.float64)
+    row_min_cols = np.full(n_items, -1, dtype=np.int64)
     
     for i in range(n_items):
-        for j in things_to_recalculate:
+        local_min_val = np.inf
+        local_min_col = -1
+
+        for j_idx in range(len(things_to_recalculate)):
+            j = things_to_recalculate[j_idx]
             if i == j:
                 scores[i][j] = np.inf
                 continue
@@ -74,14 +76,24 @@ def closest_pair_driver(
             for h in h_range:
                 t1 = counts[h, i]
                 t3 = counts[h, j]
-                for h_prime in np.arange(h+1, n_hypotheses):
+                for h_prime in range(h+1, n_hypotheses):
                     t2 = counts[h_prime, j]
                     t4 = counts[h_prime, i]
 
                     metric_val += (t1*t2 - t3*t4)**2 * weights[h, h_prime]**4
             scores[i][j] = metric_val
+
+            if metric_val < local_min_val:
+                local_min_val = metric_val
+                local_min_col = j
+
+        row_min_vals[i] = local_min_val
+        row_min_cols[i] = local_min_col
     
-    return scores.argmin()
+    best_row = np.argmin(row_min_vals)
+    best_col = row_min_cols[best_row]
+
+    return (best_row, best_col)
 
 class Merger(ABC):
     """Abstract class that serves as a baseplate for both the local and nonlocal merger"""
@@ -157,7 +169,7 @@ class Merger(ABC):
 
         self.comp_to_first = comp_to_first
 
-        self.counts = np.vstack(counts).astype(np.float64)
+        self.counts = np.asfortranarray(np.vstack(counts).astype(np.float64))
         self.counts[~np.isfinite(self.counts)] = 0
 
         self.bin_edges = np.array(bin_edges, dtype=np.float64)
@@ -182,24 +194,6 @@ class Merger(ABC):
             A brief summary of the merger object
         """
         return f"Merger of type {self._merger_type} merging {self.original_n_items}"
-
-    @abstractmethod
-    def _merge(self, i, j):
-        """Merges bins i,j together
-
-        Parameters
-        ----------
-        i : int
-            The first bin index you would like to merge
-        j : int
-            The second bin you would like to merge
-
-        Returns
-        -------
-        NotImplemented
-            Abstract class does not have a proper implementation!
-        """
-        return NotImplemented
 
 
     @abstractmethod
@@ -230,7 +224,8 @@ class MergerLocal(Merger):
             weights=None,
             comp_to_first=False,
             map_at = None,
-            file_prefix=""
+            file_path="",
+            file_name="",
         ) -> None:
         """The initializer for the local merging class
 
@@ -271,8 +266,13 @@ class MergerLocal(Merger):
         self._merger_type = "Local"
 
         if any(self.map_at):
+            if not os.path.exists(file_path):
+                raise NotADirectoryError(f"{file_path} is not a valid directory!")
+            if file_path[-1] != '/':
+                file_path += '/'
+
             self.tracker =  h5py.File(
-                f".{file_prefix}_tracker.hdf5", 'w',
+                f".{file_path}{file_name}_tracker.hdf5", 'w',
                 libver='latest', driver=None,
                 )
 
@@ -289,7 +289,7 @@ class MergerLocal(Merger):
 
     @staticmethod
     @nb.njit(
-        cache=True, fastmath=True, nogil=True
+        cache=False, fastmath=True, nogil=True
         )
     def __merge_driver(counts, bin_edges, first_part, second_part):
         """This method is the numba-ified function that is called by _merge.
@@ -440,7 +440,8 @@ class MergerNonlocal(Merger):
             weights=None,
             comp_to_first=False,
             map_at = None,
-            file_prefix=""
+            file_path="",
+            file_name="",
         ) -> None:
         """The initializer for the non-local merging class
 
@@ -459,9 +460,6 @@ class MergerNonlocal(Merger):
         map_at : list, optional
             A list of bin numbers at which you would like the mapping from
             the original sample to be recorded, by default None
-        brute_force_at : int, optional
-            A value at or below which the merger will utilize the "brute-force" approach
-            of merging by calculating a total ROC score, by default 10
         file_prefix : str, optional
             This is the prefix that comes before the file bin map before "_tracker.hdf5"
 
@@ -488,14 +486,19 @@ class MergerNonlocal(Merger):
 
         self.scores = np.zeros((self.n_items, self.n_items), dtype=np.float64)
         self.things_to_recalculate = np.arange(self.n_items, dtype=int)
+        
+        self.__cur_iteration_tracker = nb.typed.Dict()
+        for i in self.things_to_recalculate:
+            self.__cur_iteration_tracker[i] = np.array([i], dtype=np.int64)
 
         if any(self.map_at):
-            self.__cur_iteration_tracker = nb.typed.Dict()
-            for i in self.things_to_recalculate:
-                self.__cur_iteration_tracker[i] = np.array([i], dtype=np.int64)
+            if not os.path.isdir(file_path):
+                raise NotADirectoryError(f"{file_path} is not a valid directory!")
+            if file_path[-1] != '/':
+                file_path += '/'
 
-            tracker_name = f".{file_prefix}_tracker.hdf5"
-            bins_name = f".{file_prefix}_physical_bins.npy"
+            tracker_name = f"{file_path}{file_name}_tracker.hdf5"
+            bins_name = f".{file_path}{file_name}_physical_bins.npy"
 
             if os.path.exists(tracker_name):
                 os.system(f"rm {tracker_name} {bins_name}")
@@ -516,13 +519,12 @@ class MergerNonlocal(Merger):
                 np.save(bins_name, self.physical_bins,
                         fix_imports=False, allow_pickle=True)
         else:
-            self.__cur_iteration_tracker = nb.typed.Dict()
             self.tracker = None
 
     @staticmethod
     @nb.njit(
-        "(int64,int64,Array(float64, 2, 'C', False, aligned=True),Array(float64, 2, 'C', False, aligned=True),DictType(int64, Array(int64, 1, 'C')),int64,int64)",
-        cache=True
+        "(int64, int64, Array(float64, 2, 'F', False, aligned=True), Array(float64, 2, 'A', False, aligned=True), DictType(int64, Array(int64, 1, 'C')), int64, int64)",
+        cache=False
     )
     def __merge_driver_tracker(
         n_items, n_hypotheses, counts, scores, cur_tracker,
@@ -551,96 +553,8 @@ class MergerNonlocal(Merger):
         scores = scores[:k+1, :k+1]
         scores[k] = np.inf
         scores[:, k] = np.inf
-        scores = scores[:, ::1]
 
-        return k, np.ascontiguousarray(counts), np.ascontiguousarray(scores)
-
-    @staticmethod
-    @nb.njit(
-        "(int64, int64, Array(float64, 2, 'C', False, aligned=True), Array(float64, 2, 'C', False, aligned=True), int64, int64)",
-        cache=True
-    )
-    def __merge_driver(
-        n_items, n_hypotheses, counts, scores,
-        i, j
-    ):
-        indices = {i,j}
-        k = 0
-        sum_term = np.zeros(n_hypotheses)
-        for c in np.arange(n_items):
-            if c not in indices:
-                #if c == k then you don't need to do anything!
-                #The bins pre and post merge will be the same
-                if c != k:
-                    counts[:, k] = counts[:, c]
-                    scores[:, k], scores[k] = scores[:, c], scores[c]
-
-                k += 1
-            else:
-                # add the merged terms to an accumulator
-                sum_term += counts[:, c]
-
-        counts[:, k] = sum_term.T
-        counts = counts[:, :-1:1]
-        scores = scores[:k+1, :k+1]
-        scores[k] = np.inf
-        scores[:, k] = np.inf
-        scores = scores[:, ::1]
-
-        return k, np.ascontiguousarray(counts), np.ascontiguousarray(scores)
-
-    def _merge(self, i, j):
-        """Merge bins i and j together
-        The merged bins are placed at the end of the new array
-
-
-        Parameters
-        ----------
-        i : int
-            The first index to merge
-        j : int
-            The second index to merge
-        """
-
-        if self.tracker is not None:
-            #add tuples that contain original indices within the key of the new indices
-            old_tracker_entries = np.concatenate((self.__cur_iteration_tracker[i], self.__cur_iteration_tracker[j]))
-
-        if self.tracker is not None:
-            k, self.counts, self.scores = self.__merge_driver_tracker(
-                self.n_items, self.n_hypotheses, self.counts, self.scores, self.__cur_iteration_tracker,
-                i, j
-            )
-        else:
-            k, self.counts, self.scores = self.__merge_driver(
-                self.n_items, self.n_hypotheses, self.counts, self.scores,
-                i, j
-            )
-        self.things_to_recalculate = np.array([k, ], dtype=int)
-
-
-        if self.tracker is not None:
-            self.__cur_iteration_tracker[k] = old_tracker_entries
-            del self.__cur_iteration_tracker[k+1] #in the end k is the number of entries left over
-
-
-    def __closest_pair(self):
-        """Recalculates the scores that it needs to
-        according to self.things_to_recalculate
-        and picks the smallest score from
-        the score matrix
-
-        Returns
-        -------
-        tuple[int, int]
-            A 2d index for self.scores
-        """
-        min_arg = closest_pair_driver(
-            self.n_items, self.things_to_recalculate, self.scores,
-            self.counts, self.n_hypotheses, self.weights, self.comp_to_first
-        )
-
-        return np.unravel_index(min_arg, self.scores.shape)
+        return k, counts, scores
 
 
     def __convert_tracker(self):
@@ -686,9 +600,32 @@ class MergerNonlocal(Merger):
             desc="Binning non-locally:", leave=True, position=0
             )
         while self.n_items > target_bin_number:
-            min_1, min_2 = self.__closest_pair()
-            self._merge(min_1, min_2)
 
+            ###### FIND BINS TO MERGE ######
+            min_1, min_2 = _closest_pair_driver(
+                self.n_items, self.things_to_recalculate, self.scores,
+                self.counts, self.n_hypotheses, self.weights, self.comp_to_first
+            )
+
+            ##### MERGE STEP ######
+            if self.tracker is not None:
+                #add tuples that contain original indices within the key of the new indices
+                old_tracker_entries = np.concatenate((self.__cur_iteration_tracker[min_1], self.__cur_iteration_tracker[min_2]))
+            
+            k, self.counts, self.scores = self.__merge_driver_tracker(
+                self.n_items, self.n_hypotheses, self.counts, self.scores, self.__cur_iteration_tracker,
+                min_1, min_2
+            )
+            self.things_to_recalculate = np.array([k, ], dtype=int)
+
+
+            if self.tracker is not None:
+                self.__cur_iteration_tracker[k] = old_tracker_entries
+            
+            del self.__cur_iteration_tracker[k+1] #in the end k is the number of entries left over
+
+
+            ##### UPDATE STATE ######
             self.n_items -= 1
             if self.n_items in self.map_at:
                 self.tracker[str(self.n_items)][:] = self.__convert_tracker()

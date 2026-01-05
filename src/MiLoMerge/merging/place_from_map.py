@@ -47,38 +47,14 @@ def load_file_nonlocal(fname_tracker, fname_bins, key):
 
     return bin_mapping, physical_bins
 
-def place_event_nonlocal(N, *observable, file_prefix="", verbose=False):
-    """Places a given event within the appropriate bin using a binmap and the 
-    original physical bins
+def place_event_nonlocal(N, *observable, file_prefix, verbose=False):
+    if not os.path.exists(f"{file_prefix}_tracker.hdf5"):
+        raise FileNotFoundError(f"{file_prefix}_tracker.hdf5 does not exist!")
+    if not os.path.exists(f"{file_prefix}_physical_bins.npy"):
+        raise FileNotFoundError(f"{file_prefix}_physical_bins.npy does not exist!")
 
-    Parameters
-    ----------
-    N : _type_
-        _description_
-    file_prefix : str, optional
-        _description_, by default ""
-    verbose : bool, optional
-        _description_, by default False
-
-    Returns
-    -------
-    _type_
-        _description_
-
-    Raises
-    ------
-    ValueError
-        _description_
-    ValueError
-        _description_
-    ValueError
-        _description_
-    ValueError
-        _description_
-    """
-
-    fname_tracker = f".{file_prefix}_tracker.hdf5"
-    fname_bins = f".{file_prefix}_physical_bins.npy"
+    fname_tracker = f"{file_prefix}_tracker.hdf5"
+    fname_bins = f"{file_prefix}_physical_bins.npy"
     bin_mapping, physical_bins = load_file_nonlocal(fname_tracker, fname_bins, str(N))
 
     observable = np.array(observable)
@@ -143,7 +119,7 @@ def place_event_nonlocal(N, *observable, file_prefix="", verbose=False):
 
         unrolled_index = np.searchsorted(physical_bins, observable) - 1
 
-    # print(bin_mapping)
+    unrolled_index = int(unrolled_index)
     try:
         mapped_index = bin_mapping[unrolled_index]
     except IndexError as e:
@@ -151,12 +127,14 @@ def place_event_nonlocal(N, *observable, file_prefix="", verbose=False):
 
     return mapped_index
 
-def place_array_nonlocal(N, observables, file_prefix="", verbose=False, file_path=""):
-    if file_path != "" and file_path[-1] != "/":
-        file_path += "/"
+def place_array_nonlocal(N, observables, file_prefix, verbose=False):
+    if not os.path.exists(f"{file_prefix}_tracker.hdf5"):
+        raise FileNotFoundError(f"{file_prefix}_tracker.hdf5 does not exist!")
+    if not os.path.exists(f"{file_prefix}_physical_bins.npy"):
+        raise FileNotFoundError(f"{file_prefix}_physical_bins.npy does not exist!")
 
-    fname_tracker = f"{file_path}.{file_prefix}_tracker.hdf5"
-    fname_bins = f"{file_path}.{file_prefix}_physical_bins.npy"
+    fname_tracker = f"{file_prefix}_tracker.hdf5"
+    fname_bins = f"{file_prefix}_physical_bins.npy"
     bin_mapping, physical_bins = load_file_nonlocal(fname_tracker, fname_bins, str(N))
     observables_stacked = np.array(observables)
 
@@ -179,6 +157,7 @@ def place_array_nonlocal(N, observables, file_prefix="", verbose=False, file_pat
 
         unrolled_index = (np.power(n_physical_bins - 1, np.arange(n_observables - 1,-1,-1, np.int64))*nonzero_rolled).sum(axis=1)
         unrolled_index = unrolled_index.astype(int)
+
     elif np.any(subarray_lengths != subarray_lengths[0]):
         if len(observables_stacked[0]) != len(physical_bins):
             raise ValueError(
@@ -199,6 +178,7 @@ def place_array_nonlocal(N, observables, file_prefix="", verbose=False, file_pat
             unrolled_index += nonzero_rolled[:,i]*multiplier
             if i > 0:
                 multiplier *= subarray_lengths[i] - 1
+
     else:
         if observables_stacked.ndim != physical_bins.ndim:
             raise ValueError(f"Number of observables {observables_stacked.ndim} != Number of bin dimensions {physical_bins.ndim}")
@@ -216,16 +196,19 @@ def place_array_nonlocal(N, observables, file_prefix="", verbose=False, file_pat
     return bin_mapping[unrolled_index].ravel()
 
 def place_local(N, observable_array, file_prefix="", verbose=False):
-    fname = f".{file_prefix}_tracker.hdf5"
-    bin_mapping = load_file_local(fname, str(N))
+    if not os.path.exists(f"{file_prefix}_tracker.hdf5"):
+        raise FileNotFoundError(f"{file_prefix}_tracker.hdf5 does not exist!")
+
+    fname_tracker = f"{file_prefix}_tracker.hdf5"
+    bin_mapping = load_file_local(fname_tracker, str(N))
 
     if verbose:
-        print(f"Using file {os.path.abspath(fname)}")
+        print(f"Using file {os.path.abspath(fname_tracker)}")
         print(np.array(bin_mapping))
 
     placements = np.searchsorted(bin_mapping, observable_array) - 1
 
     if np.any((placements < 0) or (placements == len(bin_mapping)) ):
-        warnings.warn("Some items placed out of bounds! Consider having an overflow or underflow bin!")
+        warnings.warn("Some items placed out of bounds! Please check your phasespace to ensure it is within your original binning!")
 
     return placements

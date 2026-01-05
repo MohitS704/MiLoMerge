@@ -3,19 +3,19 @@ requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [project]
-name = "minimal-binning"
-version = "0.0.1"
+name = "MiLoMerge"
+version = "1.0.0"
 authors = [
-  { name="Lucas Kang", email="" }
+  { name="Mohit Srivastav", email="msrivas6@jhu.edu"},
   { name="Michalis Panagiotou", email=""},
-  { name="Mohit Srivastav", email="msrivas6@jhu.edu"}
+  { name="Lucas Kang", email="" },
 ]
 maintainers = [
-  { name="Lucas Kang", email="" }
+  { name="Mohit Srivastav", email="msrivas6@jhu.edu"},
   { name="Michalis Panagiotou", email=""},
-  { name="Mohit Srivastav", email="msrivas6@jhu.edu"}
+  { name="Lucas Kang", email="" },
 ]
-description = "A package to take a given distribution and approximate the best nonlocal binning to maximize separation"
+description = "A package to take a given distribution and retrieve the best binning to maximize separation"
 readme = "README.md"
 requires-python = ">=3.8"
 classifiers = [
