@@ -25,13 +25,48 @@ def test_naive():
     new_counts = merger.run(3)
     assert np.count_nonzero(new_counts[0] == 6) == 1
     assert np.count_nonzero(new_counts[0] == 0) == 2
+    assert np.all(new_counts[0][new_counts[1] == 7] == 0)
+    assert np.all(new_counts[0][new_counts[2] == 8] == 0)
 
     assert np.count_nonzero(new_counts[1] == 7) == 1
     assert np.count_nonzero(new_counts[1] == 0) == 2
+    assert np.all(new_counts[1][new_counts[0] == 6] == 0)
+    assert np.all(new_counts[1][new_counts[2] == 8] == 0)
 
     assert np.count_nonzero(new_counts[2] == 8) == 1
     assert np.count_nonzero(new_counts[2] == 0) == 2
+    assert np.all(new_counts[2][new_counts[0] == 6] == 0)
+    assert np.all(new_counts[2][new_counts[1] == 7] == 0)
 
+def test_naive_comp_first():
+    h1 = np.zeros(30)
+    h1[0] = 5
+    h1[3] = 1
+
+    h2 = np.zeros(30)
+    h2[1] = 5
+    h2[4] = 2
+    
+    h3 = np.zeros(30)
+    h3[2] = 5
+    h3[5] = 3
+
+    merger = MiLoMerge.MergerNonlocal(
+        range(31), #bin edges
+        h1,
+        h2,
+        h3,
+        comp_to_first=True
+    )
+    new_counts = merger.run(2)
+    
+    nonzero_h1_mask = new_counts[0] == 6
+    zero_h1_mask = new_counts[0] == 0
+    assert new_counts[1][nonzero_h1_mask] == 0
+    assert new_counts[1][zero_h1_mask] == 7
+
+    assert new_counts[2][nonzero_h1_mask] == 0
+    assert new_counts[2][zero_h1_mask] == 8
 
 def test_2_case():
     h1 = np.array([3,4,5,6,8,9,10], dtype=np.float64)
