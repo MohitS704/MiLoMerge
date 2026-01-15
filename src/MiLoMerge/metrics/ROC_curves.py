@@ -12,7 +12,7 @@ def ROC_curve(sample1: Iterable[float], sample2: Iterable[float]):
     sample1 : Iterable[float]
         The "signal" sample. Must be a 1-d array.
     sample2 : Iterable[float]
-        The "bakckground" sample. Must be the same size as sample1
+        The "background" sample. Must be the same size as sample1
 
     Returns
     -------
@@ -43,7 +43,7 @@ def LOC_curve(sample1: Iterable[float], sample2: Iterable[float]):
     sample1 : Iterable[float]
         The "signal" sample. Must be a 1-d array.
     sample2 : Iterable[float]
-        The "bakckground" sample. Must be the same size as sample1
+        The "background" sample. Must be the same size as sample1
 
     Returns
     -------

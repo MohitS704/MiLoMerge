@@ -1,10 +1,12 @@
 # MiLoMerge
 
-A package to merge bins together in such a way that the separability between distributions is minimally lossless, utilizing the metric defined in [ARXIV LINK](DEAD LINK).
+A package to merge bins together in such a way that the separability between distributions is minimally lossless.
 The ROC and LOC curves defined in the paper above are also included as functions in this package.
 It is fully Pythonic, with full interoperability with Numpy.
 
 ## Installation
+
+### Through pip
 
 MiLoMerge is available in pip, and soon to conda, and can be installed as below:
 
@@ -12,12 +14,13 @@ MiLoMerge is available in pip, and soon to conda, and can be installed as below:
 pip install MiLoMerge
 ```
 
-## Documentation
+### Manual Installation
 
-The documentation can be found at [DOC LINK](DEAD LINK). Talks and tutorials given
-are also available below:
+Download the .tar.gz installation and run the following command in the MiLoMerge directory:
 
-- [TALK_NOVEMBER_2025](DEAD LINK)
+```bash
+pip install .
+```
 
 ## Getting Started
 
