@@ -1,17 +1,18 @@
 [build-system]
-requires = ["hatchling"]
-build-backend = "hatchling.build"
+requires = [
+  "hatchling",
+  "oldest-supported-numpy",
+]
+build-backend = "hatchling"
 
 [project]
 name = "MiLoMerge"
 version = "1.0.0"
 authors = [
-  { name="Mohit V. Srivastav", email="msrivas6@jhu.edu"},
-  { name="Michalis Panagiotou", email="mpanagi1@jhu.edu"},
-  { name="Lucas S. Kang", email="lkang12@jhu.edu"},
+  { name="MiLoMerge authors", email="milomerg@lists.jh.edu"},
 ]
 maintainers = [
-  { name="Mohit Srivastav", email="msrivas6@jhu.edu"},
+  { name="MiLoMerge authors", email="milomerg@lists.jh.edu"},
 ]
 description = "A package to take a given distribution and retrieve the best binning to maximize separation"
 readme = "README.md"
@@ -25,14 +26,27 @@ dependencies = [
 
 [project.urls]
 "Github" = "https://github.com/MohitS704/bin_merging"
+Homepage = "https://spin.pha.jhu.edu/"
 Discussions = "https://github.com/MohitS704/bin_merging/discussions"
 Changelog = "https://github.com/MohitS704/bin_merging/releases"
 
-[dependency-groups]
+[project.optional-dependencies]
 docs = [
   "furo",
   "myst_parser >=0.13",
   "sphinx >=4.0",
   "sphinx-copybutton",
   "sphinx-autodoc-typehints",
+]
+test = [
+  "pytest"
+]
+
+[tool.hatch.build.targets.sdist]
+include = [
+  "src",
+  "tests",
+]
+exclude = [
+  "docs",
 ]

@@ -19,11 +19,10 @@ Is there a paper about this stuff?
 Yes! the paper can be found at (DEAD LINK)
 
 
-
 Where has this package been used?
 --------------------------------------
 
 The MiLoMerge package has
 been used in some particle physics analyses on CMS
-for the Higgs Boson.
+for the Higgs Boson and B-Physics.
 

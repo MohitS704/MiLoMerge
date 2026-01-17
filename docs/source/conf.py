@@ -108,6 +108,14 @@ html_theme_options = {
             """,
             "class": "",
         },
+        {
+            "name" : "JHU",
+            "url" : "https://spin.pha.jhu.edu/",
+            "html":"""
+                <img src="https://spin.pha.jhu.edu/droppedImage.png" alt="JHUGen Logo">
+            """,
+            "class": "",
+        }
     ],
     "source_repository": "https://github.com/MohitS704/bin_merging",
     "source_branch": "main",

@@ -21,3 +21,4 @@ package.
    MiLoMerge
    Tutorials
    FAQ
+   Changelog
