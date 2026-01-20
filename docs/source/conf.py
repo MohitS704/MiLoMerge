@@ -22,7 +22,7 @@ import MiLoMerge
 project = "MiLoMerge"
 copyright = "2025, MiLoMerge Authors"
 author = "Mohit Srivastav, Michalis Panagiotou, Lucas Kang"
-version = release = "1.0.0"
+version = release = "1.0"
 
 # -- General configuration ---------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#general-configuration

@@ -21,11 +21,20 @@ dependencies = [
   "tqdm",
 ]
 
+classifiers = [
+    "Intended Audience :: Science/Research",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3 :: Only",
+    "Topic :: Scientific/Engineering :: Physics",
+    "Topic :: Scientific/Engineering :: Information Analysis",
+    "Topic :: Utilities",
+]
+
 [project.urls]
 "Github" = "https://github.com/MohitS704/bin_merging"
-Homepage = "https://spin.pha.jhu.edu/"
-Discussions = "https://github.com/MohitS704/bin_merging/discussions"
-Changelog = "https://github.com/MohitS704/bin_merging/releases"
+"Homepage" = "https://spin.pha.jhu.edu/"
+"Documentation" = "https://spin.pha.jhu.edu/MiLoMerge"
+"Changelog" = "https://spin.pha.jhu.edu/MiLoMerge/Changelog.html"
 
 [dependency-groups]
 docs = [

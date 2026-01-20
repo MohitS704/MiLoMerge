@@ -5,7 +5,7 @@ seperability between N hypotheses. Metrics such as the ROC and LOC metrics are p
 as well as merging tools in MergerLocal and MergerNonlocal.
 """
 __name__ == "MiLoMerge"
-__version__ = "1.0.0"
+__version__ = "1.0"
 __author__ = "Mohit V. Srivastav, Michalis Panagiotou, Lucas S. Kang"
 from .merging.bin_optimizer import mlm_driver as mlm
 from .merging.bin_optimizer import MergerLocal, MergerNonlocal
