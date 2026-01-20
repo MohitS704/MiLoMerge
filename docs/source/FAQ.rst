@@ -5,7 +5,6 @@ Frequently Asked Questions
 ==============================
 
 
-
 Where should I go if I encounter a bug?
 ----------------------------------------
 
@@ -16,7 +15,10 @@ the developer team at msrivas6@jhu.edu with your bug.
 Is there a paper about this stuff?
 --------------------------------------
 
-Yes! the paper can be found at (DEAD LINK)
+Yes! The initial paper, which includes
+examples for how the package can be used,
+as well as the basis for the metric used,
+can be found on `ArXiv <https://arxiv.org/abs/2601.10822> _`
 
 
 Where has this package been used?

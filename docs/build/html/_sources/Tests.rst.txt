@@ -6,7 +6,9 @@ Test Cases
 
 The :py:func:`test_2_case` tests in :ref:`Localtest` and :ref:`NonlocalTest`
 showcase the fact that the brute force case and the MiLoMerge package produce the same
-result.
+result. Selected tests are shown below, but one can also
+look at the source code on `Git <https://github.com/MohitS704/MiLoMerge/tree/master/tests>`_
+if desired.
 
 .. _LocalTest:
 

@@ -173,7 +173,7 @@
           <svg class="theme-icon-when-light"><use href="#svg-sun"></use></svg>
         </button>
       </div>
-      <label class="toc-overlay-icon toc-header-icon no-toc" for="__toc">
+      <label class="toc-overlay-icon toc-header-icon" for="__toc">
         <span class="icon"><svg><use href="#svg-toc"></use></svg></span>
       </label>
     </div>
@@ -243,63 +243,63 @@
               <svg class="theme-icon-when-light"><use href="#svg-sun"></use></svg>
             </button>
           </div>
-          <label class="toc-overlay-icon toc-content-icon no-toc" for="__toc">
+          <label class="toc-overlay-icon toc-content-icon" for="__toc">
             <span class="icon"><svg><use href="#svg-toc"></use></svg></span>
           </label>
         </div>
         <article role="main" id="furo-main-content">
           <section id="milomerge-documentation">
 <h1>MiLoMerge Documentation<a class="headerlink" href="#milomerge-documentation" title="Link to this heading">¶</a></h1>
-<p>This documentation is provided to assist in the usage of the MiLoMerge
-package.</p>
 <div class="toctree-wrapper compound">
-<p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
-<ul>
-<li class="toctree-l1"><a class="reference internal" href="MiLoMerge.html">Package Documentation</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="Mergers.html">Mergers</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="Mergers.html#MiLoMerge.MergerLocal"><code class="docutils literal notranslate"><span class="pre">MergerLocal</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="Mergers.html#MiLoMerge.MergerNonlocal"><code class="docutils literal notranslate"><span class="pre">MergerNonlocal</span></code></a></li>
-</ul>
-</li>
-<li class="toctree-l2"><a class="reference internal" href="Metrics.html">Distribution Metrics</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="Metrics.html#MiLoMerge.ROC_curve"><code class="docutils literal notranslate"><span class="pre">ROC_curve()</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="Metrics.html#MiLoMerge.LOC_curve"><code class="docutils literal notranslate"><span class="pre">LOC_curve()</span></code></a></li>
-</ul>
-</li>
-<li class="toctree-l2"><a class="reference internal" href="Placement.html">Placing Events After Merging</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="Placement.html#MiLoMerge.place_event_nonlocal"><code class="docutils literal notranslate"><span class="pre">place_event_nonlocal()</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="Placement.html#MiLoMerge.place_array_nonlocal"><code class="docutils literal notranslate"><span class="pre">place_array_nonlocal()</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="Placement.html#MiLoMerge.place_local"><code class="docutils literal notranslate"><span class="pre">place_local()</span></code></a></li>
-</ul>
-</li>
-</ul>
-</li>
-<li class="toctree-l1"><a class="reference internal" href="Tutorials.html">MiLoMerge Tutorials</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="Tests.html">Test Cases</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="Tests.html#local-usage">Local Usage</a></li>
-<li class="toctree-l3"><a class="reference internal" href="Tests.html#nonlocal-usage">Nonlocal Usage</a></li>
-<li class="toctree-l3"><a class="reference internal" href="Tests.html#post-merging-bin-placement">Post-merging Bin Placement</a></li>
-</ul>
-</li>
-<li class="toctree-l2"><a class="reference internal" href="Examples.html">Basic Examples</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="Examples.html#generating-a-toy-dataset-and-plotting-separability-as-a-function-of-bin-number">Generating a Toy Dataset and Plotting Separability as a Function of Bin Number</a></li>
-<li class="toctree-l3"><a class="reference internal" href="Examples.html#using-the-roc-and-loc-curves-for-n-d-distributions">Using the ROC and LOC curves for N-d distributions</a></li>
-</ul>
-</li>
-</ul>
-</li>
-<li class="toctree-l1"><a class="reference internal" href="FAQ.html">Frequently Asked Questions</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="FAQ.html#where-should-i-go-if-i-encounter-a-bug">Where should I go if I encounter a bug?</a></li>
-<li class="toctree-l2"><a class="reference internal" href="FAQ.html#is-there-a-paper-about-this-stuff">Is there a paper about this stuff?</a></li>
-<li class="toctree-l2"><a class="reference internal" href="FAQ.html#where-has-this-package-been-used">Where has this package been used?</a></li>
-</ul>
-</li>
-<li class="toctree-l1"><a class="reference internal" href="Changelog.html">Changelog</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="Changelog.html#version-1-0-0-january-15-2026">Version 1.0.0 (January 15, 2026)</a></li>
-</ul>
-</li>
-</ul>
 </div>
+<section id="overview">
+<h2>Overview<a class="headerlink" href="#overview" title="Link to this heading">¶</a></h2>
+<p>This documentation is provided to assist in the usage of the MiLoMerge
+package for “Minimal Loss Merging”. The MiLoMerge package is designed to provide an interface
+for merging bins together such that the loss in separability
+between N distributions is minimized.</p>
+<p>MiLoMerge is based off of <a class="reference external" href="https://arxiv.org/abs/2601.10822">Maximizing Returns: Optimizing Experimental Observables at the LHC</a>,
+which is currently available on ArXiv.</p>
+</section>
+<section id="relevant-urls">
+<h2>Relevant URLs<a class="headerlink" href="#relevant-urls" title="Link to this heading">¶</a></h2>
+<p>The homepage for MiLoMerge is located at
+the <a class="reference external" href="https://spin.pha.jhu.edu/">JHUGen website</a>,
+where one can find all the relevant links.</p>
+<p>There is also a <a class="reference external" href="https://pypi.org/project/MiLoMerge/">PyPi page</a> available.</p>
+</section>
+<section id="installation">
+<h2>Installation<a class="headerlink" href="#installation" title="Link to this heading">¶</a></h2>
+<p>You can install MiLoMerge with pip, conda, or directly from the homepage.</p>
+<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="go">pip install MiLoMerge</span>
+</pre></div>
+</div>
+<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="go">wget https://spin.pha.jhu.edu/Merger/&lt;version&gt;.tar.gz</span>
+<span class="go">tar -xzf &lt;version&gt;.tar.gz</span>
+<span class="go">cd MiLoMerge</span>
+<span class="go">pip install .</span>
+</pre></div>
+</div>
+</section>
+<section id="papers-and-talks">
+<h2>Papers and Talks<a class="headerlink" href="#papers-and-talks" title="Link to this heading">¶</a></h2>
+<section id="papers">
+<h3>Papers<a class="headerlink" href="#papers" title="Link to this heading">¶</a></h3>
+<ul class="simple" id="id1">
+<li><p>(Jan. 15, 2026): <a class="reference external" href="MaximizingReturns:OptimizingExperimentalObservablesattheLHC">ArXiv:2601.10822</a></p></li>
+</ul>
+</section>
+<section id="talks">
+<h3>Talks<a class="headerlink" href="#talks" title="Link to this heading">¶</a></h3>
+<ul class="simple">
+<li><p>JHU HEP-Ex Seminar (Nov. 19, 2025): <a class="reference external" href="https://physics-astronomy.jhu.edu/event/hep-ex-amo-seminar-mohit-srivastav-michalis-panagiotou-jhu/">Maximizing Impact: The Quest for Optimal Observables in Experiments</a></p></li>
+</ul>
+</section>
+</section>
+<section id="citing-milomerge">
+<h2>Citing MiLoMerge<a class="headerlink" href="#citing-milomerge" title="Link to this heading">¶</a></h2>
+<p>If using the MiLoMerge package, please cite the papers listed in the <span class="xref std std-ref">Papers</span> section above.</p>
+</section>
 </section>
 
         </article>
@@ -345,8 +345,35 @@ package.</p>
         
       </footer>
     </div>
-    <aside class="toc-drawer no-toc">
+    <aside class="toc-drawer">
       
+      
+      <div class="toc-sticky toc-scroll">
+        <div class="toc-title-container">
+          <span class="toc-title">
+            On this page
+          </span>
+        </div>
+        <div class="toc-tree-container">
+          <div class="toc-tree">
+            <ul>
+<li><a class="reference internal" href="#">MiLoMerge Documentation</a><ul>
+<li><a class="reference internal" href="#overview">Overview</a></li>
+<li><a class="reference internal" href="#relevant-urls">Relevant URLs</a></li>
+<li><a class="reference internal" href="#installation">Installation</a></li>
+<li><a class="reference internal" href="#papers-and-talks">Papers and Talks</a><ul>
+<li><a class="reference internal" href="#papers">Papers</a></li>
+<li><a class="reference internal" href="#talks">Talks</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#citing-milomerge">Citing MiLoMerge</a></li>
+</ul>
+</li>
+</ul>
+
+          </div>
+        </div>
+      </div>
       
       
     </aside>
