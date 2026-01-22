@@ -6,10 +6,10 @@ build-backend = "hatchling.build"
 name = "MiLoMerge"
 version = "1.0.1"
 authors = [
-  { name="MiLoMerge authors", email=""},
+  { name="MiLoMerge authors", email="MiLoMerge@lists.johnshopkins.edu" },
 ]
 maintainers = [
-  { name="Mohit Srivastav", email="msrivas6@jh.edu"},
+  { name="MiLoMerge authors", email="MiLoMerge@lists.johnshopkins.edu" },
 ]
 description = "A package to take a given histogram and merge bins such that the seperability loss is minimized."
 readme = "README.md"

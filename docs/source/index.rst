@@ -85,7 +85,7 @@ Where should I go if I encounter a bug?
 ++++++++++++++++++++++++++++++++++++++++++
 
 Please raise an issue on `Github <https://github.com/JHUGen/MiLoMerge/issues>`_ and/or contact
-msrivas6@jh.edu with your bug.
+the authors at MiLoMerge@lists.johnshopkins.edu with your bug.
 
 
 Is there a paper about this stuff?
