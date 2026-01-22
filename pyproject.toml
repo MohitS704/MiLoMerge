@@ -6,12 +6,12 @@ build-backend = "hatchling.build"
 name = "MiLoMerge"
 version = "1.0.1"
 authors = [
-  { name="MiLoMerge authors", email="milomerg@lists.jh.edu"},
+  { name="MiLoMerge authors", email=""},
 ]
 maintainers = [
-  { name="MiLoMerge authors", email="milomerg@lists.jh.edu"},
+  { name="Mohit Srivastav", email="msrivas6@jh.edu"},
 ]
-description = "A package to take a given distribution and retrieve the best binning to maximize separation"
+description = "A package to take a given histogram and merge bins such that the seperability loss is minimized."
 readme = "README.md"
 requires-python = ">=3.8"
 dependencies = [

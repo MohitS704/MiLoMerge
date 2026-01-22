@@ -17,7 +17,6 @@ MiLoMerge Documentation
 
    MiLoMerge
    Tutorials
-   FAQ
    Changelog
 
 Overview
@@ -36,7 +35,8 @@ Relevant URLs
 
 The homepage for MiLoMerge is located at 
 the `JHUGen website <https://spin.pha.jhu.edu/>`_,
-where one can find all the relevant links.
+with the `GitHub <https://github.com/JHUGen/MiLoMerge>`_ available as well.
+Both are linked in the footer of each page.
 
 There is also a `PyPi page <https://pypi.org/project/MiLoMerge/>`_ available.
 
@@ -76,3 +76,30 @@ Citing MiLoMerge
 If using the MiLoMerge package, please cite the papers listed in the section above.
 
 
+
+Frequently Asked Questions
+------------------------------
+
+
+Where should I go if I encounter a bug?
+++++++++++++++++++++++++++++++++++++++++++
+
+Please raise an issue on `Github <https://github.com/JHUGen/MiLoMerge/issues>`_ and/or contact
+msrivas6@jh.edu with your bug.
+
+
+Is there a paper about this stuff?
+++++++++++++++++++++++++++++++++++++++++++
+
+Yes! The initial paper, which includes
+examples for how the package can be used,
+as well as the basis for the metric used,
+can be found on `ArXiv <https://arxiv.org/abs/2601.10822>`_.
+
+
+Where has this package been used?
+++++++++++++++++++++++++++++++++++++++++++
+
+So far, the MiLoMerge package has
+been used in some particle physics analyses on CMS
+for the Higgs Boson and B-Physics.
