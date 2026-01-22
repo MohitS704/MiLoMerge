@@ -9,7 +9,7 @@ authors = [
   { name="MiLoMerge authors", email="MiLoMerge@lists.johnshopkins.edu" },
 ]
 maintainers = [
-  { name="MiLoMerge authors", email="MiLoMerge@lists.johnshopkins.edu" },
+  { name="MiLoMerge authors", email="MiLoMerge@lists.johnshopkins.edu" }
 ]
 description = "A package to take a given histogram and merge bins such that the seperability loss is minimized."
 readme = "README.md"
@@ -20,8 +20,11 @@ dependencies = [
   "numpy>=2.0.0",
   "tqdm",
 ]
+license = "BSD-3-Clause"
+license-files = ["LICENSE"]
 
 classifiers = [
+    "Development Status :: 5 - Production/Stable",
     "Intended Audience :: Science/Research",
     "Programming Language :: Python :: 3",
     "Topic :: Scientific/Engineering",
@@ -36,6 +39,7 @@ classifiers = [
 "Homepage" = "https://spin.pha.jhu.edu/"
 "Documentation" = "https://spin.pha.jhu.edu/MiLoMerge"
 "Changelog" = "https://spin.pha.jhu.edu/MiLoMerge/Changelog.html"
+"Bug Tracker" = "https://github.com/JHUGen/MiLoMerge/issues"
 
 [dependency-groups]
 docs = [
