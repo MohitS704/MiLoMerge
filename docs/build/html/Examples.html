@@ -3,10 +3,10 @@
   <head><meta charset="utf-8">
     <meta name="viewport" content="width=device-width,initial-scale=1">
     <meta name="color-scheme" content="light dark"><meta name="viewport" content="width=device-width, initial-scale=1" />
-<link rel="index" title="Index" href="genindex.html"><link rel="search" title="Search" href="search.html"><link rel="next" title="Frequently Asked Questions" href="FAQ.html"><link rel="prev" title="Test Cases" href="Tests.html">
+<link rel="index" title="Index" href="genindex.html"><link rel="search" title="Search" href="search.html"><link rel="next" title="Changelog" href="Changelog.html"><link rel="prev" title="Test Cases" href="Tests.html">
 
     <!-- Generated with Sphinx 8.1.3 and Furo 2025.12.19 -->
-        <title>Basic Examples - MiLoMerge 1.0.0 documentation</title>
+        <title>Basic Examples - MiLoMerge 1.0.1 documentation</title>
       <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=d111a655" />
     <link rel="stylesheet" type="text/css" href="_static/styles/furo.css?v=7bdb33bb" />
     <link rel="stylesheet" type="text/css" href="_static/copybutton.css?v=76b2166b" />
@@ -162,7 +162,7 @@
       </label>
     </div>
     <div class="header-center">
-      <a href="index.html"><div class="brand">MiLoMerge 1.0.0 documentation</div></a>
+      <a href="index.html"><div class="brand">MiLoMerge 1.0.1 documentation</div></a>
     </div>
     <div class="header-right">
       <div class="theme-toggle-container theme-toggle-header">
@@ -183,7 +183,7 @@
       
       <div class="sidebar-sticky"><a class="sidebar-brand" href="index.html">
   
-  <span class="sidebar-brand-text">MiLoMerge 1.0.0 documentation</span>
+  <span class="sidebar-brand-text">MiLoMerge 1.0.1 documentation</span>
   
 </a><form class="sidebar-search-container" method="get" action="search.html" role="search">
   <input class="sidebar-search" placeholder="Search" name="q" aria-label="Search">
@@ -204,7 +204,7 @@
 <li class="toctree-l2 current current-page"><a class="current reference internal" href="#">Basic Examples</a></li>
 </ul>
 </li>
-<li class="toctree-l1"><a class="reference internal" href="FAQ.html">Frequently Asked Questions</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Changelog.html">Changelog</a></li>
 </ul>
 
 </div>
@@ -225,12 +225,12 @@
         </a>
         <div class="content-icon-container">
           <div class="view-this-page">
-  <a class="muted-link" href="https://github.com/MohitS704/bin_merging/blob/main/docs/Examples.rst?plain=true" title="View this page">
+  <a class="muted-link" href="https://github.com/JHUGen/MiLoMerge/blob/main/docs/Examples.rst?plain=true" title="View this page">
     <svg><use href="#svg-eye"></use></svg>
     <span class="visually-hidden">View this page</span>
   </a>
 </div><div class="edit-this-page">
-  <a class="muted-link" href="https://github.com/MohitS704/bin_merging/edit/main/docs/Examples.rst" rel="edit" title="Edit this page">
+  <a class="muted-link" href="https://github.com/JHUGen/MiLoMerge/edit/main/docs/Examples.rst" rel="edit" title="Edit this page">
     <svg><use href="#svg-pencil"></use></svg>
     <span class="visually-hidden">Edit this page</span>
   </a>
@@ -256,12 +256,10 @@ one may find useful for certain use cases.</p>
 <div class="admonition warning">
 <p class="admonition-title">Warning</p>
 <p>This code snippet is best used for either local merging
-or for nonlocal merging where the number of bins is
-<span class="math notranslate nohighlight">\(~\leq 2500\)</span>. Any longer then that and
-it would take too long, and we instead recommend
-that one utilizes the map_at functionality
-to instead map the performance at a variety
-of different selected bin values.</p>
+or for nonlocal merging where the amount of time taken
+is short. Any nonlocal merging done with large N should instead
+use the example below
+that one utilizes the map_at functionality.</p>
 </div>
 <p>Since both the merger classes in <a class="reference internal" href="Mergers.html#mergers"><span class="std std-ref">Mergers</span></a>
 save the number of bins from the run method, one can
@@ -283,15 +281,66 @@ keep calling the run method.</p>
 <span class="n">signal_counts</span> <span class="o">=</span> <span class="n">signal_counts</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">int</span><span class="p">)</span>
 
 <span class="c1"># here we are starting from 25 bins</span>
-<span class="n">merger</span> <span class="o">=</span> <span class="n">MiLoMerge</span><span class="o">.</span><span class="n">MergerLocal</span><span class="p">(</span><span class="n">binning</span><span class="p">,</span> <span class="n">h1</span><span class="p">,</span> <span class="n">h2</span><span class="p">)</span>
+<span class="n">merger</span> <span class="o">=</span> <span class="n">MiLoMerge</span><span class="o">.</span><span class="n">MergerLocal</span><span class="p">(</span><span class="n">binning</span><span class="p">,</span> <span class="n">signal_counts</span><span class="p">,</span> <span class="n">background_counts</span><span class="p">)</span>
 
 <span class="n">n_bins</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">25</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">int32</span><span class="p">)</span>
 <span class="n">scores</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros_like</span><span class="p">(</span><span class="n">n_bins</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">)</span>
 
 <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">n</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">n_bins</span><span class="p">):</span>
     <span class="c1"># We can unpack the 2-d bin counts for our own use</span>
-    <span class="p">(</span><span class="n">h1_temp</span><span class="p">,</span> <span class="n">h2_temp</span><span class="p">),</span> <span class="n">_</span> <span class="o">=</span> <span class="n">merger</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="n">return_counts</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-    <span class="n">scores</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">MiLoMerge</span><span class="o">.</span><span class="n">LOC_score</span><span class="p">(</span><span class="n">h1_temp</span><span class="p">,</span> <span class="n">h2_temp</span><span class="p">)</span>
+    <span class="n">_</span><span class="p">,</span> <span class="p">(</span><span class="n">h1_temp</span><span class="p">,</span> <span class="n">h2_temp</span><span class="p">)</span> <span class="o">=</span> <span class="n">merger</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="n">return_counts</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="n">scores</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">MiLoMerge</span><span class="o">.</span><span class="n">LOC_curve</span><span class="p">(</span><span class="n">h1_temp</span><span class="p">,</span> <span class="n">h2_temp</span><span class="p">)[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+
+<span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">n_bins</span><span class="p">,</span> <span class="n">scores</span><span class="p">)</span>
+</pre></div>
+</div>
+</section>
+<section id="generating-a-toy-dataset-and-plotting-separability-as-a-function-of-bin-number-large-n">
+<h2>Generating a Toy Dataset and Plotting Separability as a Function of Bin Number (Large N)<a class="headerlink" href="#generating-a-toy-dataset-and-plotting-separability-as-a-function-of-bin-number-large-n" title="Link to this heading">¶</a></h2>
+<div class="highlight-python notranslate" id="perfperbinexamplelargen"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">matplotlib.pyplot</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">plt</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">MiLoMerge</span>
+
+<span class="n">signal</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">normal</span><span class="p">(</span><span class="n">loc</span><span class="o">=</span><span class="mi">600</span><span class="p">,</span> <span class="n">scale</span><span class="o">=</span><span class="mi">20</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="mi">5000</span><span class="p">)</span> <span class="c1">#some random signal centered at 600</span>
+<span class="n">background</span> <span class="o">=</span> <span class="mi">175</span> <span class="o">+</span> <span class="mi">1000</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">exponential</span><span class="p">(</span><span class="mf">0.2</span><span class="p">,</span> <span class="mi">100_000</span><span class="p">)</span> <span class="c1">#some random falling background</span>
+<span class="n">binning</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">175</span><span class="p">,</span> <span class="mi">1001</span><span class="p">,</span> <span class="mi">25</span><span class="p">)</span>
+
+<span class="n">background_counts</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">histogram</span><span class="p">(</span><span class="n">background</span><span class="p">,</span> <span class="n">binning</span><span class="p">)</span>
+<span class="n">background_counts</span> <span class="o">=</span> <span class="n">background_counts</span><span class="o">*</span><span class="mi">1000</span><span class="o">/</span><span class="n">background_counts</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
+<span class="n">background_counts</span> <span class="o">=</span> <span class="n">background_counts</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">int</span><span class="p">)</span>
+
+<span class="n">signal_counts</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">histogram</span><span class="p">(</span><span class="n">signal</span><span class="p">,</span> <span class="n">binning</span><span class="p">)</span>
+<span class="n">signal_counts</span> <span class="o">=</span> <span class="n">signal_counts</span><span class="o">*</span><span class="mi">50</span><span class="o">/</span><span class="n">signal_counts</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
+<span class="n">signal_counts</span> <span class="o">=</span> <span class="n">signal_counts</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">int</span><span class="p">)</span>
+
+<span class="c1"># here we are starting from 25 bins</span>
+<span class="n">n_bins</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">25</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">int32</span><span class="p">)</span>
+<span class="n">fpath</span> <span class="o">=</span> <span class="s2">&quot;./&quot;</span>
+<span class="n">fname</span> <span class="o">=</span> <span class="s2">&quot;test&quot;</span>
+<span class="n">fprefix</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">fpath</span><span class="si">}{</span><span class="n">fname</span><span class="si">}</span><span class="s2">&quot;</span>
+<span class="n">merger</span> <span class="o">=</span> <span class="n">MiLoMerge</span><span class="o">.</span><span class="n">MergerNonlocal</span><span class="p">(</span>
+    <span class="n">binning</span><span class="p">,</span>
+    <span class="n">signal_counts</span><span class="p">,</span>
+    <span class="n">background_counts</span><span class="p">,</span>
+    <span class="n">map_at</span><span class="o">=</span><span class="n">n_bins</span><span class="p">,</span>
+    <span class="n">file_path</span><span class="o">=</span><span class="n">fpath</span><span class="p">,</span>
+    <span class="n">file_name</span><span class="o">=</span><span class="n">fname</span>
+<span class="p">)</span>
+
+<span class="n">scores</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros_like</span><span class="p">(</span><span class="n">n_bins</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">)</span>
+<span class="n">merger</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>
+
+<span class="c1">#To ensure that all data lies within the observable phasespace</span>
+<span class="c1">#So that the placement function does not error out</span>
+<span class="n">signal_mask</span> <span class="o">=</span> <span class="p">(</span><span class="n">signal</span> <span class="o">&gt;=</span> <span class="n">binning</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span> <span class="o">&amp;</span> <span class="p">(</span><span class="n">signal</span> <span class="o">&lt;=</span> <span class="n">binning</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span>
+<span class="n">background_mask</span> <span class="o">=</span> <span class="p">(</span><span class="n">background</span> <span class="o">&gt;=</span> <span class="n">binning</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span> <span class="o">&amp;</span> <span class="p">(</span><span class="n">background</span> <span class="o">&lt;=</span> <span class="n">binning</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span>
+
+<span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">n</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">n_bins</span><span class="p">):</span>
+    <span class="c1"># We can unpack the 2-d bin counts for our own use</span>
+    <span class="n">h1_temp</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">bincount</span><span class="p">(</span><span class="n">MiLoMerge</span><span class="o">.</span><span class="n">place_array_nonlocal</span><span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="n">signal</span><span class="p">[</span><span class="n">signal_mask</span><span class="p">],</span> <span class="n">file_prefix</span><span class="o">=</span><span class="n">fprefix</span><span class="p">),</span> <span class="n">minlength</span><span class="o">=</span><span class="n">n</span><span class="p">)</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">float</span><span class="p">)</span>
+    <span class="n">h2_temp</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">bincount</span><span class="p">(</span><span class="n">MiLoMerge</span><span class="o">.</span><span class="n">place_array_nonlocal</span><span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="n">background</span><span class="p">[</span><span class="n">background_mask</span><span class="p">],</span> <span class="n">file_prefix</span><span class="o">=</span><span class="n">fprefix</span><span class="p">),</span> <span class="n">minlength</span><span class="o">=</span><span class="n">n</span><span class="p">)</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">float</span><span class="p">)</span>
+
+    <span class="n">scores</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">MiLoMerge</span><span class="o">.</span><span class="n">LOC_curve</span><span class="p">(</span><span class="n">h1_temp</span><span class="p">,</span> <span class="n">h2_temp</span><span class="p">)[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
 
 <span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">n_bins</span><span class="p">,</span> <span class="n">scores</span><span class="p">)</span>
 </pre></div>
@@ -305,18 +354,25 @@ they have to be 1-dimensional distributions! Since
 the curves are ordered by ratio, one can simply
 call <code class="xref py py-func docutils literal notranslate"><span class="pre">numpy.ndarray.ravel()</span></code> to unroll the histogram
 into an equivalent 1-dimensional distribution.</p>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>The metric functions specifically take in arrays of floats.
+If the histogram being used is an array of integers,
+simply call <code class="xref py py-func docutils literal notranslate"><span class="pre">numpy.ndarray.astype()</span></code> to convert
+it to a float.</p>
+</div>
 <div class="highlight-python notranslate" id="roc-loc-example"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">matplotlib.pyplot</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">plt</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">MiLoMerge</span>
 
 <span class="c1"># Imagine that h1 and h2 are n-dimensional NumPy histograms</span>
-<span class="c1"># of some arbitrary variable</span>
+<span class="c1"># of some arbitrary variable, which are currently integer arrays</span>
 
 <span class="c1">#Using the LOC curve</span>
-<span class="n">TPR</span><span class="p">,</span> <span class="n">FPR</span><span class="p">,</span> <span class="n">score</span> <span class="o">=</span> <span class="n">MiLoMerge</span><span class="o">.</span><span class="n">LOC_curve</span><span class="p">(</span><span class="n">h1</span><span class="o">.</span><span class="n">ravel</span><span class="p">(),</span> <span class="n">h2</span><span class="o">.</span><span class="n">ravel</span><span class="p">())</span>
+<span class="n">TPR</span><span class="p">,</span> <span class="n">FPR</span><span class="p">,</span> <span class="n">score</span> <span class="o">=</span> <span class="n">MiLoMerge</span><span class="o">.</span><span class="n">LOC_curve</span><span class="p">(</span><span class="n">h1</span><span class="o">.</span><span class="n">ravel</span><span class="p">()</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">float</span><span class="p">),</span> <span class="n">h2</span><span class="o">.</span><span class="n">ravel</span><span class="p">()</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">float</span><span class="p">))</span>
 
 <span class="c1">#Using the ROC curve</span>
-<span class="n">TPR</span><span class="p">,</span> <span class="n">FPR</span><span class="p">,</span> <span class="n">score</span> <span class="o">=</span> <span class="n">MiLoMerge</span><span class="o">.</span><span class="n">ROC_curve</span><span class="p">(</span><span class="n">h1</span><span class="o">.</span><span class="n">ravel</span><span class="p">(),</span> <span class="n">h2</span><span class="o">.</span><span class="n">ravel</span><span class="p">())</span>
+<span class="n">TPR</span><span class="p">,</span> <span class="n">FPR</span><span class="p">,</span> <span class="n">score</span> <span class="o">=</span> <span class="n">MiLoMerge</span><span class="o">.</span><span class="n">ROC_curve</span><span class="p">(</span><span class="n">h1</span><span class="o">.</span><span class="n">ravel</span><span class="p">()</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">float</span><span class="p">),</span> <span class="n">h2</span><span class="o">.</span><span class="n">ravel</span><span class="p">()</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">float</span><span class="p">))</span>
 </pre></div>
 </div>
 </section>
@@ -327,12 +383,12 @@ into an equivalent 1-dimensional distribution.</p>
       <footer>
         
         <div class="related-pages">
-          <a class="next-page" href="FAQ.html">
+          <a class="next-page" href="Changelog.html">
               <div class="page-info">
                 <div class="context">
                   <span>Next</span>
                 </div>
-                <div class="title">Frequently Asked Questions</div>
+                <div class="title">Changelog</div>
               </div>
               <svg class="furo-related-icon"><use href="#svg-arrow-right"></use></svg>
             </a>
@@ -360,10 +416,13 @@ into an equivalent 1-dimensional distribution.</p>
           </div>
           <div class="right-details">
             <div class="icons">
-              <a class="muted-link " href="https://github.com/MohitS704/bin_merging" aria-label="GitHub">
+              <a class="muted-link " href="https://github.com/JHUGen/MiLoMerge" aria-label="GitHub">
                 <svg stroke="currentColor" fill="currentColor" stroke-width="0" viewBox="0 0 16 16">
                     <path fill-rule="evenodd" d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0 0 16 8c0-4.42-3.58-8-8-8z"></path>
                 </svg>
+            </a>
+              <a class="muted-link " href="https://spin.pha.jhu.edu/" aria-label="JHU">
+                <img src="https://spin.pha.jhu.edu/droppedImage.png" alt="JHUGen Logo">
             </a>
               
             </div>
@@ -386,6 +445,7 @@ into an equivalent 1-dimensional distribution.</p>
             <ul>
 <li><a class="reference internal" href="#">Basic Examples</a><ul>
 <li><a class="reference internal" href="#generating-a-toy-dataset-and-plotting-separability-as-a-function-of-bin-number">Generating a Toy Dataset and Plotting Separability as a Function of Bin Number</a></li>
+<li><a class="reference internal" href="#generating-a-toy-dataset-and-plotting-separability-as-a-function-of-bin-number-large-n">Generating a Toy Dataset and Plotting Separability as a Function of Bin Number (Large N)</a></li>
 <li><a class="reference internal" href="#using-the-roc-and-loc-curves-for-n-d-distributions">Using the ROC and LOC curves for N-d distributions</a></li>
 </ul>
 </li>
@@ -398,12 +458,11 @@ into an equivalent 1-dimensional distribution.</p>
       
     </aside>
   </div>
-</div><script src="_static/documentation_options.js?v=8d563738"></script>
+</div><script src="_static/documentation_options.js?v=292eb321"></script>
     <script src="_static/doctools.js?v=9bcbadda"></script>
     <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="_static/scripts/furo.js?v=46bd48cc"></script>
     <script src="_static/clipboard.min.js?v=a7894cd8"></script>
     <script src="_static/copybutton.js?v=f281be69"></script>
-    <script async="async" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
     </body>
 </html>

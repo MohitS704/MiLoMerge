@@ -1,0 +1,5 @@
+sphinx
+typing_extensions
+myst_parser
+sphinx_copybutton
+furo

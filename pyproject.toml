@@ -4,29 +4,42 @@ build-backend = "hatchling.build"
 
 [project]
 name = "MiLoMerge"
-version = "1.0.0"
+version = "1.0.1"
 authors = [
-  { name="Mohit V. Srivastav", email="msrivas6@jhu.edu"},
-  { name="Michalis Panagiotou", email="mpanagi1@jhu.edu"},
-  { name="Lucas S. Kang", email="lkang12@jhu.edu"},
+  { name="MiLoMerge authors", email="MiLoMerge@lists.johnshopkins.edu" },
 ]
 maintainers = [
-  { name="Mohit Srivastav", email="msrivas6@jhu.edu"},
+  { name="MiLoMerge authors", email="MiLoMerge@lists.johnshopkins.edu" }
 ]
-description = "A package to take a given distribution and retrieve the best binning to maximize separation"
+description = "A package to take a given histogram and merge bins such that the seperability loss is minimized."
 readme = "README.md"
 requires-python = ">=3.8"
 dependencies = [
   "h5py>=3.0.0",
-  "numba>=0.63.1",
+  "numba",
   "numpy>=2.0.0",
   "tqdm",
 ]
+license = "BSD-3-Clause"
+license-files = ["LICENSE"]
+
+classifiers = [
+    "Development Status :: 5 - Production/Stable",
+    "Intended Audience :: Science/Research",
+    "Programming Language :: Python :: 3",
+    "Topic :: Scientific/Engineering",
+    "Topic :: Scientific/Engineering :: Physics",
+    "Topic :: Scientific/Engineering :: Mathematics",
+    "Topic :: Scientific/Engineering :: Information Analysis",
+    "Topic :: Utilities",
+]
 
 [project.urls]
-"Github" = "https://github.com/MohitS704/bin_merging"
-Discussions = "https://github.com/MohitS704/bin_merging/discussions"
-Changelog = "https://github.com/MohitS704/bin_merging/releases"
+"Github" = "https://github.com/JHUGen/MiLoMerge"
+"Homepage" = "https://spin.pha.jhu.edu/"
+"Documentation" = "https://spin.pha.jhu.edu/MiLoMerge"
+"Changelog" = "https://spin.pha.jhu.edu/MiLoMerge/Changelog.html"
+"Bug Tracker" = "https://github.com/JHUGen/MiLoMerge/issues"
 
 [dependency-groups]
 docs = [
