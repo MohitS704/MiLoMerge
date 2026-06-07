@@ -107,7 +107,7 @@ class Merger(ABC):
         self,
         bin_edges: Iterable[float],
         *counts: Iterable[float],
-        weights: typing.Union[int, Iterable[float]] = None,
+        weights: typing.Union[int, Iterable[float], Iterable[Iterable[float]]] = None,
         comp_to_first: bool = False,
         map_at: Iterable[int] = None,
     ) -> None:
@@ -172,7 +172,13 @@ class Merger(ABC):
 
         self._merger_type = None
 
-        self.weights = np.outer(weights, weights)
+        if len(weights.shape) > 1:
+            if (weights.shape[0] != weights.shape[1]) or (len(weights.shape) > 2):
+                raise ValueError("Weights must be either a 1d array of # samples or a 2d square matrix of the same dimension!")
+            self.weights = np.copy(weights)
+        else:
+            self.weights = np.outer(weights, weights)
+
         self.n_hypotheses = len(counts)
         self.n_items = self.original_n_items = len(counts[0])
         # self.n is the number of hypotheses, self.n_items is the current number of bin_edges
@@ -248,6 +254,8 @@ class MergerLocal(Merger):
             A series of arrays that correspond to the number of events between your bin edges.
         weights : numpy.ndarray, optional
             An array of the weights associated for each of the counts.
+            These weights can be either a 2d array comparing weights pair-wise,
+            or a 1-d array for a flat weight per hypothesis.
             If none are provided, the weights will be 1, by default None
         comp_to_first : bool, optional
             Whether you would like to compare all samples to the first one

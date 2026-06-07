@@ -33,7 +33,7 @@ def ROC_curve(sample1: Iterable[float], sample2: Iterable[float]):
     return TPR, FPR, np.trapz(FPR, TPR)
 
 
-@nb.njit("(Array(float64, 1, 'A'), Array(float64, 1, 'A'))", fastmath=True, cache=False)
+@nb.njit("(Array(float64, 1, 'A'), Array(float64, 1, 'A'))", fastmath=True, cache=True)
 def LOC_curve(sample1: Iterable[float], sample2: Iterable[float]):
     """A function to calculate the LOC curve described in (ARXIV LINK)
     given 2 distributions.
