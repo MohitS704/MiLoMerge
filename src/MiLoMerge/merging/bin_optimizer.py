@@ -60,6 +60,42 @@ def mlm_driver(
 
     return metric_val
 
+@nb.njit(
+    "float64(int64, Array(float64, 2, 'C'), Array(float64, 2, 'C'), int64, int64)",
+    cache=True,
+    parallel=False,
+)
+def mlm_driver_revised(
+    n: int,
+    counts: Iterable[Iterable[float]],
+    weights: Iterable[Iterable[float]],
+    b: int,
+    b_prime: int,
+) -> float:
+    t1 = t2 = t3 = t4 = t5 = t6 = 0
+
+    for h in range(n):
+        cHB_sq = counts[h,b] * counts[h,b]
+        cHBp_sq = counts[h,b_prime] * counts[h,b_prime]
+        w_hh = weights[h,h] * weights[h,h]
+        
+        t1 += cHB_sq * w_hh
+        t2 += cHBp_sq * w_hh
+        t3 += (counts[h,b] + counts[h,b_prime])**2 * w_hh
+        
+        for h_prime in range(h,n):
+            w_hhp = weights[h,h_prime]
+
+            cHpB_plus_cHpBp_sq = (counts[h_prime,b] + counts[h_prime,b_prime])**2
+            cHpBp_sq = counts[h_prime,b_prime] * counts[h_prime,b_prime]
+
+            t4 += cHB_sq*cHpBp_sq * w_hhp
+            t5 += cHB_sq*cHpB_plus_cHpBp_sq * w_hhp
+            t6 += cHBp_sq*cHpB_plus_cHpBp_sq * w_hhp
+    
+    return t1 + t2 + t3 + 2*(np.sqrt(t4) - np.sqrt(t5) - np.sqrt(t6))
+
+
 
 @nb.njit(
     "(int64, Array(int64, 1, 'C'), Array(float64, 2, 'A'), Array(float64, 2, 'F'), int64, Array(float64, 2, 'C'), b1)",
@@ -83,19 +119,26 @@ def _closest_pair_driver(
             if i == j:
                 scores[i][j] = np.inf
                 continue
-            metric_val = 0
-            for h in h_range:
-                t1 = counts[h, i]
-                t3 = counts[h, j]
-                for h_prime in range(h + 1, n_hypotheses):
-                    t2 = counts[h_prime, j]
-                    t4 = counts[h_prime, i]
+            # metric_val = 0
+            # for h in h_range:
+            #     t1 = counts[h, i]
+            #     t3 = counts[h, j]
+            #     for h_prime in range(h + 1, n_hypotheses):
+            #         t2 = counts[h_prime, j]
+            #         t4 = counts[h_prime, i]
 
-                    term = t1 * t2 - t3 * t4
-                    w = weights[h, h_prime]
-                    metric_val += (term * term) * (w * w * w * w)
+            #         term = t1 * t2 - t3 * t4
+            #         w = weights[h, h_prime]
+            #         metric_val += (term * term) * (w * w * w * w)
 
-            scores[i][j] = metric_val
+            if comp_to_first:
+                scores[i][j] = mlm_driver(
+                    n_hypotheses, counts, weights, i, j, False
+                )
+            else:
+                scores[i][j] = mlm_driver_revised(
+                    n_hypotheses, counts, weights, i, j
+                )
 
     return np.argmin(scores)
 
