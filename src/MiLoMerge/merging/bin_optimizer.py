@@ -63,36 +63,18 @@ def _closest_pair_driver(
     counts: Iterable[Iterable[float]],
     n_hypotheses: int,
     weights: Iterable[Iterable[float]],
-    comp_to_first: bool,
+    comp_to_first: bool
 ) -> int:
-    h_range = range(1) if comp_to_first else range(n_hypotheses)
-
     for i in range(n_items):
         for j_idx in range(len(things_to_recalculate)):
             j = things_to_recalculate[j_idx]
             if i == j:
                 scores[i][j] = np.inf
                 continue
-            # metric_val = 0
-            # for h in h_range:
-            #     t1 = counts[h, i]
-            #     t3 = counts[h, j]
-            #     for h_prime in range(h + 1, n_hypotheses):
-            #         t2 = counts[h_prime, j]
-            #         t4 = counts[h_prime, i]
 
-            #         term = t1 * t2 - t3 * t4
-            #         w = weights[h, h_prime]
-            #         metric_val += (term * term) * (w * w * w * w)
-
-            if comp_to_first:
-                scores[i][j] = mlm_driver(
-                    n_hypotheses, counts, weights, i, j, False
-                )
-            else:
-                scores[i][j] = mlm_driver_revised(
-                    n_hypotheses, counts, weights, i, j
-                )
+            scores[i][j] = mlm_driver(
+                n_hypotheses, counts, weights, i, j, False
+            )
 
     return np.argmin(scores)
 
