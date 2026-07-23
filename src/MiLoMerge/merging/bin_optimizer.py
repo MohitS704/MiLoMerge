@@ -11,7 +11,7 @@ import typing
 
 
 @nb.njit(
-    "float64(int64, Array(float64, 2, 'C'), Array(float64, 2, 'C'), int64, int64, b1)",
+    "float64(int64, Array(float64, 2, 'A'), Array(float64, 2, 'C'), int64, int64)",
     cache=True,
     parallel=False,
 )
@@ -21,78 +21,32 @@ def mlm_driver(
     weights: Iterable[Iterable[float]],
     b: int,
     b_prime: int,
-    comp_to_first: bool,
 ) -> float:
-    """This method uses the MLM metric to compare all samples to each other
-    and issue a score between the two bin indices.
 
-    Parameters
-    ----------
-    n : int
-        The number of samples being dealt with
-    counts : numpy.ndarray
-        An ndarray of the counts with shape (#samples, #bins)
-    weights : numpy.ndarray
-        An ndarray of per-sample weight with size (#samples)
-    b : int
-        The index of the first bin that is being calculated
-    b_prime : int
-        The index of the second bin that is being calculated
-    comp_to_first : bool
-        Whether comparisons are only done between every sample and sample 0
+    hypo_b = counts[:,b]
+    hypo_b_prime = counts[:,b_prime]
 
-    Returns
-    -------
-    float
-        The score, as prescribed by the MLM metric
-    """
+    w_hh = np.diag(weights)**2
+    cHB_sq = hypo_b * hypo_b
+    cHBp_sq = hypo_b_prime * hypo_b_prime
+    cHB_plus_cHBp_sq = (hypo_b + hypo_b_prime)**2
 
-    metric_val = 0
-    h_range = range(1) if comp_to_first else range(n)
-    for h in h_range:
-        t1 = counts[h, b]
-        t3 = counts[h, b_prime]
-        for h_prime in range(h + 1, n):
-            t2 = counts[h_prime, b_prime]
-            t4 = counts[h_prime, b]
+    t1 = w_hh @ cHB_sq
+    t2 = w_hh @ cHBp_sq
+    t3 = w_hh @ cHB_plus_cHBp_sq
 
-            metric_val += (t1 * t2 - t3 * t4) ** 2 * weights[h, h_prime] ** 4
-
-    return metric_val
-
-@nb.njit(
-    "float64(int64, Array(float64, 2, 'C'), Array(float64, 2, 'C'), int64, int64)",
-    cache=True,
-    parallel=False,
-)
-def mlm_driver_revised(
-    n: int,
-    counts: Iterable[Iterable[float]],
-    weights: Iterable[Iterable[float]],
-    b: int,
-    b_prime: int,
-) -> float:
-    t1 = t2 = t3 = t4 = t5 = t6 = 0
-
+    t4 = t5 = t6 = 0
     for h in range(n):
-        cHB_sq = counts[h,b] * counts[h,b]
-        cHBp_sq = counts[h,b_prime] * counts[h,b_prime]
-        w_hh = weights[h,h] * weights[h,h]
-        
-        t1 += cHB_sq * w_hh
-        t2 += cHBp_sq * w_hh
-        t3 += (counts[h,b] + counts[h,b_prime])**2 * w_hh
-        
-        for h_prime in range(h,n):
-            w_hhp = weights[h,h_prime]
+        cHB_sq_h = cHB_sq[h]
+        cHBp_sq_h = cHBp_sq[h]
 
-            cHpB_plus_cHpBp_sq = (counts[h_prime,b] + counts[h_prime,b_prime])**2
-            cHpBp_sq = counts[h_prime,b_prime] * counts[h_prime,b_prime]
+        for h_prime in range(n):
+            w_hhp = weights[h,h_prime]*weights[h,h_prime]
 
-            t4 += cHB_sq*cHpBp_sq * w_hhp
-            t5 += cHB_sq*cHpB_plus_cHpBp_sq * w_hhp
-            t6 += cHBp_sq*cHpB_plus_cHpBp_sq * w_hhp
-    
+            t4 += cHB_sq_h*cHBp_sq[h_prime] * w_hhp
+            t5 += cHB_sq_h*cHB_plus_cHBp_sq[h_prime] * w_hhp
+            t6 += cHBp_sq_h*cHB_plus_cHBp_sq[h_prime] * w_hhp
+
     return t1 + t2 + t3 + 2*(np.sqrt(t4) - np.sqrt(t5) - np.sqrt(t6))
 
 
@@ -241,7 +195,6 @@ class Merger(ABC):
             except Exception as e:
                 raise TypeError("Parameter map_at must be an iterable!") from e
 
-        # sets are nice and hashed
         self.map_at = set([i for i in map_at if i < self.n_items])
 
     def __repr__(self) -> str:
