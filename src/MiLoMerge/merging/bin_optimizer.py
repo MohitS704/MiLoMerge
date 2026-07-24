@@ -11,7 +11,7 @@ import typing
 
 
 @nb.njit(
-    "float64(int64, Array(float64, 2, 'A'), Array(float64, 2, 'C'), int64, int64)",
+    "float64(int64, Array(float64, 2, 'F'), Array(float64, 2, 'C'), int64, int64)",
     cache=True,
     parallel=False,
 )
@@ -40,8 +40,10 @@ def mlm_driver(
         cHB_sq_h = cHB_sq[h]
         cHBp_sq_h = cHBp_sq[h]
 
+        weights_h = weights[h]*weights[h]
+
         for h_prime in range(n):
-            w_hhp = weights[h,h_prime]*weights[h,h_prime]
+            w_hhp = weights_h[h_prime]
 
             t4 += cHB_sq_h*cHBp_sq[h_prime] * w_hhp
             t5 += cHB_sq_h*cHB_plus_cHBp_sq[h_prime] * w_hhp
@@ -50,9 +52,8 @@ def mlm_driver(
     return t1 + t2 + t3 + 2*(np.sqrt(t4) - np.sqrt(t5) - np.sqrt(t6))
 
 
-
 @nb.njit(
-    "(int64, Array(int64, 1, 'C'), Array(float64, 2, 'A'), Array(float64, 2, 'F'), int64, Array(float64, 2, 'C'), b1)",
+    "(int64, Array(int64, 1, 'C'), Array(float64, 2, 'A'), Array(float64, 2, 'F'), int64, Array(float64, 2, 'C'))",
     parallel=False,
     cache=True,
 )
@@ -63,7 +64,6 @@ def _closest_pair_driver(
     counts: Iterable[Iterable[float]],
     n_hypotheses: int,
     weights: Iterable[Iterable[float]],
-    comp_to_first: bool
 ) -> int:
     for i in range(n_items):
         for j_idx in range(len(things_to_recalculate)):
@@ -158,14 +158,16 @@ class Merger(ABC):
         else:
             self.weights = np.outer(weights, weights)
 
+        self.comp_to_first = comp_to_first
+        if self.comp_to_first: #nuke all the weights that are unrelated to the first hypothesis
+            weights[1:, 1:] = 0
+
         self.n_hypotheses = len(counts)
         self.n_items = self.original_n_items = len(counts[0])
         # self.n is the number of hypotheses, self.n_items is the current number of bin_edges
 
-        self.comp_to_first = comp_to_first
-
         self.counts = np.vstack(counts).astype(np.float64)
-        # self.counts[~np.isfinite(self.counts)] = 0
+        self.counts = np.asfortranarray(self.counts)
 
         self.bin_edges = np.array(bin_edges, dtype=np.float64)
 
@@ -425,7 +427,6 @@ class MergerLocal(Merger):
                         self.weights,
                         i,
                         i + 1,
-                        self.comp_to_first,
                     ),
                 )
                 if i == 1:
@@ -438,7 +439,6 @@ class MergerLocal(Merger):
                             self.weights,
                             1,
                             0,
-                            self.comp_to_first,
                         ),
                     )
 
@@ -550,7 +550,7 @@ class MergerNonlocal(Merger):
         )
 
         self._merger_type = "Non-local"
-        self.counts = np.asfortranarray(self.counts)
+        # self.counts = np.asfortranarray(self.counts)
 
         self.physical_bins = np.array(bin_edges, dtype=object)
         self.n_observables = len(bin_edges)
@@ -689,7 +689,6 @@ class MergerNonlocal(Merger):
                 self.counts,
                 self.n_hypotheses,
                 self.weights,
-                self.comp_to_first,
             )
             min_1, min_2 = np.unravel_index(min_arg, self.scores.shape)
 
