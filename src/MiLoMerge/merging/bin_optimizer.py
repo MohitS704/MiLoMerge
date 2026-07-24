@@ -73,7 +73,7 @@ def _closest_pair_driver(
                 continue
 
             scores[i][j] = mlm_driver(
-                n_hypotheses, counts, weights, i, j, False
+                n_hypotheses, counts, weights, i, j
             )
 
     return np.argmin(scores)
@@ -159,8 +159,13 @@ class Merger(ABC):
             self.weights = np.outer(weights, weights)
 
         self.comp_to_first = comp_to_first
-        if self.comp_to_first: #nuke all the weights that are unrelated to the first hypothesis
-            weights[1:, 1:] = 0
+        if self.comp_to_first: #nuke all the cross-terms that are unrelated to the first hypothesis
+            mask = np.ones_like(self.weights, dtype=bool)
+            mask[0, :] = False
+            mask[:, 0] = False
+            np.fill_diagonal(mask, False)
+            self.weights[mask] = 0
+
 
         self.n_hypotheses = len(counts)
         self.n_items = self.original_n_items = len(counts[0])
@@ -550,7 +555,6 @@ class MergerNonlocal(Merger):
         )
 
         self._merger_type = "Non-local"
-        # self.counts = np.asfortranarray(self.counts)
 
         self.physical_bins = np.array(bin_edges, dtype=object)
         self.n_observables = len(bin_edges)
@@ -610,23 +614,25 @@ class MergerNonlocal(Merger):
         n_items, n_hypotheses, counts, scores, cur_tracker, i, j
     ):
         k = 0
-        sum_term = np.zeros(n_hypotheses)
+
+        # add the merged terms to an accumulator
+        sum_term = counts[:,i] + counts[:,j]
+
         for c in range(n_items):
-            if c != i and c != j:
-                # if c == k then you don't need to do anything!
-                # The bins pre and post merge will be the same
-                if c != k:
-                    counts[:, k] = counts[:, c]
-                    scores[:, k], scores[k] = scores[:, c], scores[c]
+            if c == i or c == j:
+                continue
 
-                    cur_tracker[k] = cur_tracker[c]
+            # if c == k then you don't need to do anything!
+            # The bins pre and post merge will be the same
+            if c != k:
+                counts[:, k] = counts[:, c]
+                scores[:, k], scores[k] = scores[:, c], scores[c]
 
-                k += 1
-            else:
-                # add the merged terms to an accumulator
-                sum_term += counts[:, c]
+                cur_tracker[k] = cur_tracker[c]
 
-        counts[:, k] = sum_term.T
+            k += 1
+
+        counts[:, k] = sum_term
         counts = counts[:, :-1:1]
         scores = scores[: k + 1, : k + 1]
         scores[k] = np.inf

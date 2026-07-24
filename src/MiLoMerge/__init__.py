@@ -8,7 +8,6 @@ __name__ == "MiLoMerge"
 __version__ = "1.0.1"
 __author__ = "Mohit V. Srivastav, Michalis Panagiotou, Lucas S. Kang"
 from .merging.bin_optimizer import mlm_driver as mlm
-from .merging.bin_optimizer import mlm_driver_revised as mlm2
 from .merging.bin_optimizer import MergerLocal, MergerNonlocal
 from .metrics.ROC_curves import ROC_curve
 from .metrics.ROC_curves import LOC_curve
@@ -18,7 +17,6 @@ from .merging.place_from_map import place_local
 
 __all__ = [
     "mlm",
-    "mlm2",
     "MergerLocal",
     "MergerNonlocal",
     "ROC_curve",
