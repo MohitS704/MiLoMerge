@@ -1,13 +1,99 @@
 import warnings
 import os
-
+import math
+from collections.abc import Iterable
+import typing
 from abc import ABC, abstractmethod
+
 import numpy as np
 import tqdm
 import numba as nb
 import h5py
-from collections.abc import Iterable
-import typing
+
+from .lookup import FACTORIALS
+
+
+@nb.njit(
+    "float64(int64, Array(float64, 2, 'F'), Array(float64, 2, 'C'), int64, int64, int64)",
+    cache=True,
+    parallel=False,
+    fastmath=True,
+)
+def mlm_generalized_p(
+    n: int,
+    counts: Iterable[Iterable[float]],
+    weights: Iterable[Iterable[float]],
+    b: int,
+    b_prime: int,
+    p: int,
+):
+    """This is a function that calculates the bin merging metric
+    between 2 bins b and b_prime for a generic value of p
+
+    Parameters
+    ----------
+    n : int
+        The number of hypotheses
+    counts : Iterable[Iterable[float]]
+        A 2D array of the input counts, with rows corresponding to the hypotheses.
+        The array must be in fortran memory order.
+    weights : Iterable[Iterable[float]]
+        A 2D square matrix of the weights of size (n x n)
+    b : int
+        The index of the first bin
+    b_prime : int
+        The index of the second bin
+    p : int
+        The degree of the metric
+
+    Returns
+    -------
+    float
+        The score for the merging of the 2 bins
+    """
+    ## CONSTANTS, INPUT ARRAYS, AND WHATNOT
+    hypo_b = counts[:, b]
+    hypo_b_prime = counts[:, b_prime]
+    prefactor = 1 / (n - 1)
+    hypo_b_sq = hypo_b**p
+    hypo_b_prime_sq = hypo_b_prime**p
+    hypo_b_sum_sq = (hypo_b + hypo_b_prime) ** p
+    w = weights**p
+
+    ## PRECALCULATE TERMS
+    t1 = t2 = t3 = 0
+    for h in range(n):
+        t1_1 = hypo_b_sq[h]
+        t2_1 = hypo_b_prime_sq[h]
+        t3_1 = hypo_b_sum_sq[h]
+        for h_prime in range(h + 1, n):
+            t1 += (t1_1 + hypo_b_sq[h_prime]) * w[h, h_prime]
+            t2 += (t2_1 + hypo_b_prime_sq[h_prime]) * w[h, h_prime]
+            t3 += (t3_1 + hypo_b_sum_sq[h_prime]) * w[h, h_prime]
+
+    t1 *= prefactor
+    t2 *= prefactor
+    t3 *= prefactor
+
+    metric = 0
+    p_fac = int(math.gamma(p + 1))
+    for k1 in range(p + 1):
+        for k2 in range(p + 1 - k1):
+            k3 = p - k1 - k2
+
+            multiplier = 1 if (k3 % 2 == 0) else -1
+            multiplier *= (p_fac) / (FACTORIALS[k1] * FACTORIALS[k2] * FACTORIALS[k3])
+
+            if k1 > 0:
+                multiplier *= t1 ** (k1 / p)
+            if k2 > 0:
+                multiplier *= t2 ** (k2 / p)
+            if k3 > 0:
+                multiplier *= t3 ** (k3 / p)
+
+            metric += multiplier
+
+    return metric
 
 
 @nb.njit(
@@ -22,34 +108,55 @@ def mlm_driver(
     b: int,
     b_prime: int,
 ) -> float:
+    """This is a function that calculates the bin merging metric
+    between 2 bins b and b_prime for p=2, the chosen degree
+    of the merger.
 
-    hypo_b = counts[:,b]
-    hypo_b_prime = counts[:,b_prime]
+    Parameters
+    ----------
+    n : int
+        The number of hypotheses
+    counts : Iterable[Iterable[float]]
+        A 2D array of the input counts, with rows corresponding to the hypotheses.
+        The array must be in fortran memory order.
+    weights : Iterable[Iterable[float]]
+        A 2D square matrix of the weights of size (n x n)
+    b : int
+        The index of the first bin
+    b_prime : int
+        The index of the second bin
 
-    w_hh = np.diag(weights)**2
-    cHB_sq = hypo_b * hypo_b
-    cHBp_sq = hypo_b_prime * hypo_b_prime
-    cHB_plus_cHBp_sq = (hypo_b + hypo_b_prime)**2
+    Returns
+    -------
+    float
+        The score for the merging of the 2 bins
+    """
 
-    t1 = w_hh @ cHB_sq
-    t2 = w_hh @ cHBp_sq
-    t3 = w_hh @ cHB_plus_cHBp_sq
+    ## CONSTANTS, INPUT ARRAYS, AND WHATNOT
+    hypo_b = counts[:, b]
+    hypo_b_prime = counts[:, b_prime]
+    prefactor = 1 / (n - 1)
+    hypo_b_sq = hypo_b**2
+    hypo_b_prime_sq = hypo_b_prime**2
+    hypo_b_sum_sq = (hypo_b + hypo_b_prime) ** 2
+    w = weights**2
 
-    t4 = t5 = t6 = 0
+    ## PRECALCULATE TERMS
+    t1 = t2 = t3 = 0
     for h in range(n):
-        cHB_sq_h = cHB_sq[h]
-        cHBp_sq_h = cHBp_sq[h]
+        t1_1 = hypo_b_sq[h]
+        t2_1 = hypo_b_prime_sq[h]
+        t3_1 = hypo_b_sum_sq[h]
+        for h_prime in range(h + 1, n):
+            t1 += (t1_1 + hypo_b_sq[h_prime]) * w[h, h_prime]
+            t2 += (t2_1 + hypo_b_prime_sq[h_prime]) * w[h, h_prime]
+            t3 += (t3_1 + hypo_b_sum_sq[h_prime]) * w[h, h_prime]
 
-        weights_h = weights[h]*weights[h]
+    metric = prefactor * (
+        t1 + t2 + t3 + 2 * (np.sqrt(t1 * t2) - np.sqrt(t1 * t3) - np.sqrt(t2 * t3))
+    )
 
-        for h_prime in range(n):
-            w_hhp = weights_h[h_prime]
-
-            t4 += cHB_sq_h*cHBp_sq[h_prime] * w_hhp
-            t5 += cHB_sq_h*cHB_plus_cHBp_sq[h_prime] * w_hhp
-            t6 += cHBp_sq_h*cHB_plus_cHBp_sq[h_prime] * w_hhp
-
-    return t1 + t2 + t3 + 2*(np.sqrt(t4) - np.sqrt(t5) - np.sqrt(t6))
+    return metric
 
 
 @nb.njit(
@@ -65,6 +172,31 @@ def _closest_pair_driver(
     n_hypotheses: int,
     weights: Iterable[Iterable[float]],
 ) -> int:
+    """A simple wrapper function,
+    in numba for increased speed, to get the
+    closest pair in the given array
+
+    Parameters
+    ----------
+    n_items : int
+        The current number of bins
+    things_to_recalculate : Iterable[int]
+        A list of indices to recalculate in counts
+    scores : Iterable[Iterable[float]]
+        A 2D array of scores to fill
+    counts : Iterable[Iterable[float]]
+        A 2D array of bin counts, with rows
+        corresponding to hypotheses and columns to bins
+    n_hypotheses : int
+        The number of hypotheses
+    weights : Iterable[Iterable[float]]
+        A 2D square matrix of weights with size (n_hypotheses x n_hypotheses)
+
+    Returns
+    -------
+    int
+        The index of the smallest score
+    """
     for i in range(n_items):
         for j_idx in range(len(things_to_recalculate)):
             j = things_to_recalculate[j_idx]
@@ -72,9 +204,7 @@ def _closest_pair_driver(
                 scores[i][j] = np.inf
                 continue
 
-            scores[i][j] = mlm_driver(
-                n_hypotheses, counts, weights, i, j
-            )
+            scores[i][j] = mlm_driver(n_hypotheses, counts, weights, i, j)
 
     return np.argmin(scores)
 
@@ -107,9 +237,6 @@ class Merger(ABC):
         map_at : list, optional
             A list of bin numbers at which you would like the mapping
             from the original sample to be recorded, by default None
-        brute_force_at : int, optional
-            A value at or below which the merger will utilize the "brute-force"
-            approach of merging by calculating a total ROC score, by default 10
 
         Raises
         ------
@@ -153,19 +280,23 @@ class Merger(ABC):
 
         if len(weights.shape) > 1:
             if (weights.shape[0] != weights.shape[1]) or (len(weights.shape) > 2):
-                raise ValueError("Weights must be either a 1d array of # samples or a 2d square matrix of the same dimension!")
+                raise ValueError(
+                    "Weights must be either a 1d array of # samples or a 2d square matrix of the same dimension!"
+                )
             self.weights = np.copy(weights)
         else:
             self.weights = np.outer(weights, weights)
 
         self.comp_to_first = comp_to_first
-        if self.comp_to_first: #nuke all the cross-terms that are unrelated to the first hypothesis
+        if (
+            self.comp_to_first
+        ):  # nuke all the cross-terms that are unrelated to the first hypothesis
+            # self.weights = np.identity(len(counts))
             mask = np.ones_like(self.weights, dtype=bool)
             mask[0, :] = False
             mask[:, 0] = False
             np.fill_diagonal(mask, False)
             self.weights[mask] = 0
-
 
         self.n_hypotheses = len(counts)
         self.n_items = self.original_n_items = len(counts[0])
@@ -305,7 +436,7 @@ class MergerLocal(Merger):
 
     @staticmethod
     @nb.njit(
-        "(Array(float64, 2, 'C'), Array(float64, 1, 'C'), int64, int64)",
+        "(Array(float64, 2, 'F'), Array(float64, 1, 'C'), int64, int64)",
         cache=True,
         fastmath=True,
     )
@@ -466,6 +597,11 @@ class MergerLocal(Merger):
                 things_to_recalculate = (i1 - 1, i1)
 
             self.counts, self.bin_edges = self.__merge(i1, i2)
+            self.counts = np.asfortranarray(self.counts)
+            # print("selected")
+            # print(self.counts)
+            # print()
+            # print()
 
             self.n_items -= 1
 
@@ -616,7 +752,7 @@ class MergerNonlocal(Merger):
         k = 0
 
         # add the merged terms to an accumulator
-        sum_term = counts[:,i] + counts[:,j]
+        sum_term = counts[:, i] + counts[:, j]
 
         for c in range(n_items):
             if c == i or c == j:

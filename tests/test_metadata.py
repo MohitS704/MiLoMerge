@@ -24,6 +24,7 @@ def test_changelog():
 def test_dunder():
     necessary_funcs = [
         "mlm",
+        "mlm_general",
         "MergerLocal",
         "MergerNonlocal",
         "ROC_curve",

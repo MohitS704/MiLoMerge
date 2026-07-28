@@ -69,6 +69,8 @@ Talks
 ++++++
 
 - JHU HEP-Ex Seminar (Nov. 19, 2025): `Maximizing Impact: The Quest for Optimal Observables in Experiments <https://physics-astronomy.jhu.edu/event/hep-ex-amo-seminar-mohit-srivastav-michalis-panagiotou-jhu/>`_
+- Phenomenology Symposium (May 12, 2026): `Binning Bonanza: Metric Design for Quantum Observables and Efficient Dimensionality Reduction <https://indico.global/event/16413/contributions/153912/>`_
+- APS Meeting of the Divison of Particles and Fields (DPF): `Optimal Bin Reduction for Quantum Observables <https://indico.fnal.gov/event/72820/contributions/341322/>`_
 
 Citing MiLoMerge
 ------------------
